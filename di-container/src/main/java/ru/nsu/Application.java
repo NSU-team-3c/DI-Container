@@ -1,7 +1,5 @@
 package ru.nsu;
 
-
-
 import org.reflections.Reflections;
 import org.reflections.scanners.*;
 
