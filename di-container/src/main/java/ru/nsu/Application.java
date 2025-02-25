@@ -13,9 +13,9 @@ public class Application {
     private static ApplicationContext context = new ApplicationContext();
     private static Object createFromFactoryMethod(Method factoryMethod) throws InvocationTargetException, IllegalAccessException, InstantiationException, NoSuchMethodException {
         Object createdObject = null;
-        if(Modifier.isStatic(factoryMethod.getModifiers())){
+        if (Modifier.isStatic(factoryMethod.getModifiers())){
             createdObject = factoryMethod.invoke(null);
-        }else{
+        } else{
             Constructor factoryConstructor = factoryMethod.getDeclaringClass().getDeclaredConstructor();
             factoryConstructor.setAccessible(true);
             Object factoryObject = factoryConstructor.newInstance();
@@ -23,7 +23,7 @@ public class Application {
         }
         return createdObject;
     }
-    public static void run(Class clazz) throws IOException {
+    public static void run (Class clazz) throws IOException {
         Scan scan = (Scan)clazz.getAnnotation(Scan.class);
         String packageToScan = scan.packageToScan();
         Reflections reflections = new Reflections(packageToScan,
