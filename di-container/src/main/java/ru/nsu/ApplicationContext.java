@@ -11,19 +11,32 @@ import java.util.Set;
 
 public class ApplicationContext {
 
-    private Map<String, Object> storage = new HashMap<String, Object>(); // performance
+    private Map<String, Object> storage = new HashMap<>();
+    private Map<String, ThreadLocal<Object>> threadStorage = new HashMap<>();
 
     BeanFactory beanFactory = new BeanFactory();
 
     public Object getBean(String beanName, ScopeType scopeType)  {
         Object createdBean = null;
         try {
-            if(scopeType == ScopeType.PROTOTYPE){
+            if (scopeType == ScopeType.PROTOTYPE){
                 Class beanClass = Class.forName(beanName);
                 createdBean = beanFactory.createBean(beanClass);
                 return createdBean;
             }
-            if(storage.containsKey(beanName)){
+
+            if (scopeType == ScopeType.THREAD) {
+                createdBean = threadStorage.computeIfAbsent(beanName, k ->
+                        new ThreadLocal<>()).get();
+                if (createdBean == null) {
+                    Class beanClass = Class.forName(beanName);
+                    createdBean = beanFactory.createBean(beanClass);
+                    threadStorage.get(beanName).set(createdBean);
+                }
+                return createdBean;
+            }
+
+            if (storage.containsKey(beanName)){
                 return storage.get(beanName);
             }
             // create bean

@@ -1,15 +1,21 @@
-package ru.nsu;
+    package ru.nsu;
 
-import ru.nsu.Scan;
-import java.io.IOException;
+    import ru.nsu.test.UserService;
 
-@Scan(packageToScan = "ru.nsu")
-public class App {
-    public static void main(String[] args) {
-        try {
-            Application.run(App.class);
-        } catch (IOException e) {
-            e.printStackTrace();
+    import java.io.IOException;
+
+    @Scan(packageToScan = "ru.nsu.test")
+    public class App {
+        public static void main(String[] args) {
+            try {
+                Application.run(App.class);
+
+                for (int i = 0; i < 5; i++) {
+                    UserService userService = Application.getContext().getBean(UserService.class, ScopeType.PROTOTYPE);
+                    userService.getUserInfo();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
-}
