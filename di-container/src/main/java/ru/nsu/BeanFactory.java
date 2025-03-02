@@ -15,11 +15,12 @@ public class BeanFactory {
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
-        Object bean = constructor.newInstance();
-        return bean;
+
+        assert constructor != null;
+        return constructor.newInstance();
     }
 
-    public Object createBean(Class clazz, Object...args) throws InstantiationException, InvocationTargetException, IllegalAccessException {
+    public Object createBean(Class clazz, Object...args) {
         int constructorArgsLength = args.length;
         Class[] constructorArgsTypes = new Class[constructorArgsLength];
         for(int i = 0; i < constructorArgsLength; i++){

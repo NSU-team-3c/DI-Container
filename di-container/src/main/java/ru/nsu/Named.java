@@ -7,6 +7,6 @@ import java.lang.annotation.Target;
 
 @Target(value = ElementType.FIELD)
 @Retention(value = RetentionPolicy.RUNTIME)
-public @interface Wired {
+public @interface Named {
     ScopeType scope() default ScopeType.SINGLETON;
 }

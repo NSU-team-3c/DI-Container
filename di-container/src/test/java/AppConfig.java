@@ -1,5 +1,3 @@
-package ru.nsu.test;
-
 import ru.nsu.Bean;
 
 public class AppConfig {

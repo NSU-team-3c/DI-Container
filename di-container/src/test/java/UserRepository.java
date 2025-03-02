@@ -1,5 +1,3 @@
-package ru.nsu.test;
-
 import java.util.Random;
 
 public class UserRepository {

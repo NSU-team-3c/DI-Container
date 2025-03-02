@@ -1,6 +1,3 @@
-package ru.nsu.test;
-
-
 import ru.nsu.ScopeType;
 import ru.nsu.Wired;
 

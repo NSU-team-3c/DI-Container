@@ -5,6 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(value = {ElementType.METHOD})
-public @interface Bean {}
+@Target(value = ElementType.FIELD)
+@Retention(value = RetentionPolicy.RUNTIME)
+public @interface Inject {
+    ScopeType scope() default ScopeType.SINGLETON;
+}

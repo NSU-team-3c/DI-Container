@@ -11,8 +11,8 @@ import java.util.Set;
 
 public class ApplicationContext {
 
-    private Map<String, Object> storage = new HashMap<>();
-    private Map<String, ThreadLocal<Object>> threadStorage = new HashMap<>();
+    private final Map<String, Object> storage = new HashMap<>();
+    private final Map<String, ThreadLocal<Object>> threadStorage = new HashMap<>();
 
     BeanFactory beanFactory = new BeanFactory();
 
@@ -43,13 +43,7 @@ public class ApplicationContext {
             Class beanClass = Class.forName(beanName);
             createdBean = beanFactory.createBean(beanClass);
             storage.put(beanName, createdBean);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
             e.printStackTrace();
         }
         return createdBean;
@@ -105,19 +99,20 @@ public class ApplicationContext {
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
-        s.append("Context:{\n");
-        for(String key:storage.keySet()){
+
+        s.append("Context: {\n");
+        for(var key : storage.keySet()){
             Object bean = storage.get(key);
-            s.append(key + " : " + storage.get(key).hashCode() + "=[");
+            s.append(key).append(" : ").append(storage.get(key).hashCode()).append("=[");
             Field[] beanFields = bean.getClass().getDeclaredFields();
             for(Field beanField:beanFields){
                 try {
                     beanField.setAccessible(true);
                     Object beanFieldValue = beanField.get(bean);
                     if(beanFieldValue !=null){
-                        s.append(beanField.getName() + " : " + beanFieldValue.hashCode());
+                        s.append(beanField.getName()).append(" : ").append(beanFieldValue.hashCode());
                     }else{
-                        s.append(beanField.getName() + " : null");
+                        s.append(beanField.getName()).append(" : null");
                     }
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
