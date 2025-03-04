@@ -1,20 +1,22 @@
 package ru.nsu;
 
-import org.reflections.Reflections;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class ApplicationContext {
 
     private Map<String, Object> storage = new HashMap<>();
     private Map<String, ThreadLocal<Object>> threadStorage = new HashMap<>();
 
+    public Map<Class<?>, Class<?>> interfaceBindings = new HashMap<>();
+
     BeanFactory beanFactory = new BeanFactory();
+
+    public void bind(Class<?> interfaceClass, Class<?> implementationClass) {
+        interfaceBindings.put(interfaceClass, implementationClass);
+    }
 
     public Object getBean(String beanName, ScopeType scopeType)  {
         Object createdBean = null;
@@ -55,6 +57,8 @@ public class ApplicationContext {
         return createdBean;
     }
 
+
+
     public <T> T getBean(String beanName, Class<T> tClass, ScopeType scopeType)  {
         Object obj = getBean(beanName, scopeType);
         if (tClass.isInstance(obj)) {
@@ -64,6 +68,11 @@ public class ApplicationContext {
         throw new ClassCastException(beanName);
     }
     public <T> T getBean(Class<T> tClass, ScopeType scopeType)  {
+
+        if (tClass.isInterface() && interfaceBindings.containsKey(tClass)) {
+            tClass = (Class<T>) interfaceBindings.get(tClass);
+        }
+
         String beanName = tClass.getCanonicalName();
 
         /*if(tClass.isInterface()){
@@ -101,6 +110,7 @@ public class ApplicationContext {
     public boolean containsBean(Class beanClass){
         return containsBean(beanClass.getCanonicalName());
     }
+
 
     @Override
     public String toString() {
