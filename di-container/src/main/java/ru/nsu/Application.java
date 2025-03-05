@@ -23,9 +23,34 @@ public class Application {
         }
         return createdObject;
     }
+
+    private static Object createFromConstructor(Constructor<?> constructor) throws InvocationTargetException, IllegalAccessException, InstantiationException {
+        Object[] params = new Object[constructor.getParameterCount()];
+        for (int i = 0; i < constructor.getParameterCount(); i++) {
+            Class<?> paramType = constructor.getParameterTypes()[i];
+            params[i] = context.getBean(paramType);
+        }
+        return constructor.newInstance(params);
+    }
+
+    public static void autoBind(String packageToScan) {
+        Reflections reflections = new Reflections(packageToScan, new SubTypesScanner(false));
+        Set<Class<?>> allClasses = reflections.getSubTypesOf(Object.class);
+        var c = reflections.getAllTypes();
+
+        for (Class<?> clazz : allClasses) {
+            if (clazz.isInterface()) continue; // Пропускаем интерфейсы
+            Class<?>[] interfaces = clazz.getInterfaces();
+            for (Class<?> iface : interfaces) {
+                context.bind(iface, clazz); // Автоматическая регистрация
+            }
+        }
+    }
+
     public static void run (Class clazz) throws IOException {
         Scan scan = (Scan)clazz.getAnnotation(Scan.class);
         String packageToScan = scan.packageToScan();
+        autoBind(packageToScan);
         Reflections reflections = new Reflections(packageToScan,
                 new MethodAnnotationsScanner(),
                 new TypeAnnotationsScanner(),
@@ -95,6 +120,21 @@ public class Application {
                 e.printStackTrace();
             }
         }
+
+        Set<Constructor> injectConstructors = reflections.getConstructorsAnnotatedWith(Inject.class);
+        for (Constructor<?> constructor : injectConstructors) {
+            try {
+                Object bean = createFromConstructor(constructor);
+                context.setBean(bean.getClass().getCanonicalName(), bean);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
+
         System.out.println(context);
     }
 
@@ -105,7 +145,5 @@ public class Application {
     public static void setContext(ApplicationContext context) {
         Application.context = context;
     }
-
-
 
 }
