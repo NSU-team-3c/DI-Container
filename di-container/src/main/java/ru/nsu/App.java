@@ -1,19 +1,18 @@
     package ru.nsu;
 
     import ru.nsu.test.UserService;
+    import ru.nsu.testInject.Car;
 
     import java.io.IOException;
 
-    @Scan(packageToScan = "ru.nsu.test")
+    @Scan(packageToScan = "ru.nsu.testInject")
     public class App {
         public static void main(String[] args) {
             try {
                 Application.run(App.class);
 
-                for (int i = 0; i < 5; i++) {
-                    UserService userService = Application.getContext().getBean(UserService.class, ScopeType.PROTOTYPE);
-                    userService.getUserInfo();
-                }
+                Car car = Application.getContext().getBean(Car.class);
+                car.drive();
             } catch (IOException e) {
                 e.printStackTrace();
             }

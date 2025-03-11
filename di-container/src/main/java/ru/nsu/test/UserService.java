@@ -7,15 +7,15 @@ import ru.nsu.Wired;
 
 public class UserService {
 
-//    @Wired
-//    private UserRepository userRepositorySingleton;
+    @Wired
+    private UserRepository userRepositorySingleton;
 
-    @Wired(scope = ScopeType.PROTOTYPE)
-    private UserRepository userRepositoryPrototype;
+//    @Wired
+//    private UserRepository userRepositoryPrototype;
 
     public void getUserInfo() {
 //        System.out.println("User Info (Singleton): " + userRepositorySingleton.getUserName());
-        System.out.println("User Info (Prototype): " + userRepositoryPrototype.getUserName());
+//        System.out.println("User Info (Prototype): " + userRepositoryPrototype.getUserName());
     }
 
 }
