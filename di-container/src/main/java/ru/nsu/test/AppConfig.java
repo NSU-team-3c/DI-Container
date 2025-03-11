@@ -1,6 +1,6 @@
 package ru.nsu.test;
 
-import ru.nsu.Bean;
+import ru.nsu.annotations.Bean;
 
 public class AppConfig {
 

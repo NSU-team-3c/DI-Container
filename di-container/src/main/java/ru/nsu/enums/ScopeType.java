@@ -1,4 +1,4 @@
-package ru.nsu;
+package ru.nsu.enums;
 
 public enum ScopeType {
     SINGLETON,

@@ -2,6 +2,11 @@ package ru.nsu;
 
 import org.reflections.Reflections;
 import org.reflections.scanners.*;
+import ru.nsu.annotations.Bean;
+import ru.nsu.annotations.Scan;
+import ru.nsu.annotations.Wired;
+import ru.nsu.bean.BeanFactory;
+import ru.nsu.context.ApplicationContext;
 
 import java.io.IOException;
 

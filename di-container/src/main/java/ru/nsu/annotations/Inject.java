@@ -1,12 +1,14 @@
-package ru.nsu;
+package ru.nsu.annotations;
+
+import ru.nsu.enums.ScopeType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(value = ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.CONSTRUCTOR})
 @Retention(value = RetentionPolicy.RUNTIME)
-public @interface Wired {
+public @interface Inject {
     ScopeType scope() default ScopeType.SINGLETON;
 }

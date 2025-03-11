@@ -1,8 +1,8 @@
 package ru.nsu.test;
 
 
-import ru.nsu.ScopeType;
-import ru.nsu.Wired;
+import ru.nsu.enums.ScopeType;
+import ru.nsu.annotations.Wired;
 
 
 public class UserService {

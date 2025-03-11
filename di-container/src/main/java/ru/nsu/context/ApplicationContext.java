@@ -1,23 +1,23 @@
-package ru.nsu;
+package ru.nsu.context;
 
-import org.reflections.Reflections;
+import ru.nsu.bean.Bean;
+import ru.nsu.bean.BeanFactory;
+import ru.nsu.enums.ScopeType;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 public class ApplicationContext {
 
-    private Map<String, Object> storage = new HashMap<>();
-    private Map<String, ThreadLocal<Object>> threadStorage = new HashMap<>();
+    private Map<String, Bean> storage = new HashMap<>();
+    private Map<String, ThreadLocal<Bean>> threadStorage = new HashMap<>();
 
     BeanFactory beanFactory = new BeanFactory();
 
-    public Object getBean(String beanName, ScopeType scopeType)  {
-        Object createdBean = null;
+    public Bean getBean(String beanName, ScopeType scopeType)  {
+        Bean createdBean = null;
         try {
             if (scopeType == ScopeType.PROTOTYPE){
                 Class beanClass = Class.forName(beanName);
@@ -81,11 +81,11 @@ public class ApplicationContext {
 
 
 
-    public void setBean(String beanName, Object bean){
+    public void setBean(String beanName, Bean bean){
         storage.put(beanName,bean);
     }
 
-    public Object getBean(String beanName)  {
+    public Bean getBean(String beanName)  {
         return getBean(beanName, ScopeType.SINGLETON);
     }
     public <T> T getBean(String beanName, Class<T> tClass) {
