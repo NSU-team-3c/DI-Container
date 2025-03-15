@@ -1,40 +1,40 @@
 package ru.nsu.context;
 
+import lombok.Data;
 import lombok.NonNull;
 import ru.nsu.bean.Bean;
 import ru.nsu.enums.ScopeType;
+import ru.nsu.exceptions.SomethingBadException;
+import ru.nsu.scanner.BeanScanner;
 
+import javax.inject.Provider;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.function.Supplier;
 
+@Data
 public class ContextContainer {
-
     private Map<String, Bean> beans = new HashMap<>();
-
     private Map<String, Object> singletonInstances = new HashMap<>();
-
     private List<String> orderedByDependenciesBeans = new ArrayList<>();
-
     private Map<String, ThreadLocal<Object>> threadInstances = new HashMap<>();
-
     private Map<String, Object> customBean = new HashMap<>();
+    private BeanScanner beanScanner;
+    public Map<Class<?>, Class<?>> interfaceBindings = new HashMap<>();
 
-    //private DependencyScanningConfig dependencyScanningConfig;
+    public void bind(Class<?> interfaceClass, Class<?> implementationClass) {
+        interfaceBindings.put(interfaceClass, implementationClass);
+    }
+    public ContextContainer(BeanScanner beanScanner) {
+        this.beanScanner = beanScanner;
+        this.beans = beanScanner.getNameToBeansMap();
+        DependenciesManager resolver = new DependenciesManager(this.beans);
+
+        this.orderedByDependenciesBeans = resolver.resolveDependencies();
 
 
-    public ContextContainer() {
-//        this.dependencyScanningConfig = dependencyScanningConfig;
-//        this.beanDefinitions = dependencyScanningConfig.getNameToBeanDefinitionMap();
-//        DependencyResolver resolver = new DependencyResolver(beanDefinitions);
-//
-//        this.orderedByDependenciesBeans = resolver.resolveDependencies();
-//
-//
-//        new ShutdownHookService(this);
+        Runtime.getRuntime().addShutdownHook(new Thread(this::cleanupBeans));
     }
 
     public Bean findPrototypeBean(String beanName) {
@@ -99,5 +99,69 @@ public class ContextContainer {
 
         s.append("}");
         return s.toString();
+    }
+
+    //  MONITORING
+    private void cleanupBeans() {
+        var beanDefinitions = this.getOrderedByDependenciesBeans();
+        var singletonInstances = this.getSingletonInstances();
+        Collections.reverse(beanDefinitions);
+        for (var currentBeanName : beanDefinitions) {
+            Bean bean = this.getBeans().get(currentBeanName);
+            Object beanInstance = null;
+            if (bean == null) {
+                throw new RuntimeException("Почему-то такого бина нет");
+            }
+            if (bean.getScope().equals(ScopeType.SINGLETON)) {
+                beanInstance = singletonInstances.get(currentBeanName);
+            } else if (bean.getScope().equals(ScopeType.THREAD)) {
+                beanInstance = this.getThreadLocalBean(currentBeanName);
+            } else if (bean.getScope().equals(ScopeType.PROTOTYPE)) {
+                continue;
+            }
+            if (beanInstance == null) {
+                throw new SomethingBadException(currentBeanName + "Error in shutdownHookService, can't found bean instance with this name.");
+            }
+            checkForPrototypeBeans(beanInstance);
+            invokePreDestroy(beanInstance, bean);
+
+        }
+    }
+
+
+    // CLEANING
+    public void checkForPrototypeBeans(Object beanInstance) {
+        for (Field field : beanInstance.getClass().getDeclaredFields()) {
+            try {
+                field.setAccessible(true);
+
+                Object potentialPrototypeDependency = field.get(beanInstance);
+
+                if (potentialPrototypeDependency instanceof Provider) {
+                    potentialPrototypeDependency = ((Provider<?>) potentialPrototypeDependency).get();
+                }
+                if (potentialPrototypeDependency != null) {
+                    Bean prototypeBean = this.findPrototypeBean(potentialPrototypeDependency.getClass().getName());
+                    if (prototypeBean != null && prototypeBean.getPreDestroyMethod() != null) {
+                        invokePreDestroy(potentialPrototypeDependency, prototypeBean);
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                throw new SomethingBadException(field.getName() + "Exception with PreDestroy method " +
+                        "of the prototype field of the singleton bean");
+            }
+        }
+    }
+
+    private void invokePreDestroy(Object beanInstance, Bean bean) {
+        if (bean.getPreDestroyMethod() != null) {
+            try {
+                Method preDestroyMethod = bean.getPreDestroyMethod();
+                preDestroyMethod.setAccessible(true);
+                preDestroyMethod.invoke(beanInstance);
+            } catch (Exception e) {
+                throw new SomethingBadException(bean.getName() + "Exception with invoking of PreDestroy method");
+            }
+        }
     }
 }

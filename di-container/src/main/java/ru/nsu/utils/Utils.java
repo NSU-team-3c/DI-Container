@@ -1,7 +1,6 @@
 package ru.nsu.utils;
 
 import ru.nsu.annotations.Bean;
-import ru.nsu.annotations.Wired;
 import ru.nsu.exceptions.IncorrectFieldAnnotationsException;
 
 import java.lang.reflect.Field;

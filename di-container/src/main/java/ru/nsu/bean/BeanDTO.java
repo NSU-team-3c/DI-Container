@@ -2,7 +2,9 @@ package ru.nsu.bean;
 
 import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import ru.nsu.enums.ScopeType;
 
+import javax.inject.Scope;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +17,7 @@ public class BeanDTO {
     private String name;
 
     @JsonProperty("scope")
-    private String scope;
+    private ScopeType scope;
 
     @JsonProperty("initParams")
     private Map<String, Object> initParams;

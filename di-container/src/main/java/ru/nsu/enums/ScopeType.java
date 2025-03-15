@@ -1,7 +1,17 @@
 package ru.nsu.enums;
 
 public enum ScopeType {
-    SINGLETON,
-    PROTOTYPE,
-    THREAD
+    SINGLETON("singletone"),
+    PROTOTYPE("prototype"),
+    THREAD("thread");
+
+    private final String text;
+
+    ScopeType(final String text) {
+        this.text = text;
+    }
+
+    public String toString() {
+        return text;
+    }
 }

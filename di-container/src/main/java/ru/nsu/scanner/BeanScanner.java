@@ -1,17 +1,23 @@
 package ru.nsu.scanner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
-import ru.nsu.annotations.Inject;
-import ru.nsu.annotations.Named;
 import ru.nsu.bean.Bean;
 import ru.nsu.bean.BeanDTO;
 import ru.nsu.bean.BeanDTOWrapper;
+import ru.nsu.enums.ScopeType;
 import ru.nsu.exceptions.BadJsonException;
+import ru.nsu.exceptions.ClazzException;
+import ru.nsu.exceptions.ConstructorException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
@@ -24,7 +30,7 @@ import java.util.stream.Stream;
 @Data
 public class BeanScanner {
 
-    private Map<String, Bean> nameToBeanDefinitionMap = new HashMap<>();
+    private Map<String, Bean> nameToBeansMap = new HashMap<>();
 
     private Map<String, Bean> singletonScopes = new HashMap<>();
 
@@ -42,7 +48,7 @@ public class BeanScanner {
                 new TypeAnnotationsScanner());
 
 
-        this.beansFromJson = readBeanDefinitions(jsonConfig).getBeans();
+        this.beansFromJson = readBeans(jsonConfig).getBeans();
 
         Set<Class<?>> allClasses = reflections.getSubTypesOf(Object.class);
 
@@ -53,8 +59,8 @@ public class BeanScanner {
                         .map(Named::value)
                         .orElseThrow(() -> new ClazzException(clazz.getCanonicalName()));
 
-                BeanDTO beanDefinitionReader = Optional.ofNullable(findBeanInJson(namedAnnotationValue))
-                        .orElseThrow(() -> new WrongJsonException(namedAnnotationValue, ". No configuration for bean with name."));
+                BeanDTO beanDTO = Optional.ofNullable(findBeanInJson(namedAnnotationValue))
+                        .orElseThrow(() -> new BadJsonException(namedAnnotationValue, ". No configuration for bean with name."));
 
                 List<Field> injectedFields = new ArrayList<>();
                 List<Field> injectedProviderFields = new ArrayList<>();
@@ -84,19 +90,18 @@ public class BeanScanner {
                 }
                 bean.setClassName(clazz.getCanonicalName());
                 bean.setName(namedAnnotationValue);
-                bean.setScope(beanDefinitionReader.getScope());
+                bean.setScope(beanDTO.getScope());
                 bean.setInjectedFields(injectedFields.isEmpty() ? null : injectedFields);
                 bean.setInjectedProviderFields(injectedProviderFields.isEmpty() ? null : injectedProviderFields);
                 bean.setConstructor(selectedConstructor);
-                bean.setInitParams(beanDefinitionReader.getInitParams());
+                bean.setInitParams(beanDTO.getInitParams());
                 findConstructMethods(clazz, bean);
 
-                this.nameToBeanDefinitionMap.put(namedAnnotationValue, bean);
-                switch (beanDefinitionReader.getScope()) {
-                    case "prototype" -> {
-                    }
-                    case "singleton" -> singletonScopes.put(namedAnnotationValue, bean);
-                    case "thread" -> threadScopes.put(namedAnnotationValue, bean);
+                this.nameToBeansMap.put(namedAnnotationValue, bean);
+                switch (beanDTO.getScope()) {
+                    case PROTOTYPE -> {}
+                    case SINGLETON -> singletonScopes.put(namedAnnotationValue, bean);
+                    case THREAD -> threadScopes.put(namedAnnotationValue, bean);
                     default -> throw new BadJsonException(namedAnnotationValue, "Unknown bean scope " + bean.getScope());
                 }
             }
@@ -104,7 +109,7 @@ public class BeanScanner {
     }
 
 
-    private void findConstructMethods(Class<?> clazz, BeanDefinition beanDefinition) {
+    private void findConstructMethods(Class<?> clazz, Bean bean) {
         Method postConstructMethod = null;
         Method preDestroyMethod = null;
 
@@ -126,8 +131,8 @@ public class BeanScanner {
             }
         }
 
-        beanDefinition.setPostConstructMethod(postConstructMethod);
-        beanDefinition.setPreDestroyMethod(preDestroyMethod);
+        bean.setPostConstructMethod(postConstructMethod);
+        bean.setPreDestroyMethod(preDestroyMethod);
     }
 
     private void analyzeClassFields(Class<?> clazz, List<Field> injectedFields, List<Field> injectedProviderFields) {
@@ -143,7 +148,7 @@ public class BeanScanner {
     }
 
 
-    private BeanDTOWrapper readBeanDefinitions(String jsonConfigPath) throws IOException {
+    private BeanDTOWrapper readBeans(String jsonConfigPath) throws IOException {
         String fullPath = "beans/" + jsonConfigPath;
         InputStream jsonInput = this.getClass().getClassLoader().getResourceAsStream(fullPath);
         return objectMapper.readValue(jsonInput, BeanDTOWrapper.class);
@@ -151,7 +156,7 @@ public class BeanScanner {
 
 
     public void scanJsonConfig(String jsonConfigPath) throws ClassNotFoundException, IOException {
-        this.beansFromJson = readBeanDefinitions(jsonConfigPath).getBeans();
+        this.beansFromJson = readBeans(jsonConfigPath).getBeans();
         for (BeanDTO currentBean : beansFromJson) {
             if (currentBean.getName() == null) {
                 throw new BadJsonException("unknown", "No name field for this json");
@@ -162,7 +167,7 @@ public class BeanScanner {
             if (currentBean.getClassName() == null) {
                 throw new BadJsonException(currentBean.getName(), "No className field for this bean in json");
             }
-            String scope = currentBean.getScope();
+            ScopeType scope = currentBean.getScope();
             String beanName = currentBean.getName();
             Bean bean = new Bean();
             bean.setScope(scope);
@@ -178,13 +183,13 @@ public class BeanScanner {
                 bean.setConstructor(constructor);
             }
             switch (scope) {
-                case "singleton" -> singletonScopes.put(beanName, bean);
-                case "prototype" -> {
+                case SINGLETON -> singletonScopes.put(beanName, bean);
+                case PROTOTYPE -> {
                 }
-                case "thread" -> threadScopes.put(beanName, bean);
+                case THREAD -> threadScopes.put(beanName, bean);
                 default -> throw new BadJsonException(beanName, "Unknown scope.");
             }
-            nameToBeanDefinitionMap.put(beanName, bean);
+            nameToBeansMap.put(beanName, bean);
         }
     }
 
