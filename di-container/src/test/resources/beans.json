@@ -1,0 +1,12 @@
+{
+  "beans" : [
+    {
+      "name": "userService",
+      "scope": "singleton"
+    },
+    {
+      "name": "userRepo",
+      "scope": "prototype"
+    }
+  ]
+}

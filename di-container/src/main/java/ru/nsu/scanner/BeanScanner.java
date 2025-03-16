@@ -149,8 +149,7 @@ public class BeanScanner {
 
 
     private BeanDTOWrapper readBeans(String jsonConfigPath) throws IOException {
-        String fullPath = "beans/" + jsonConfigPath;
-        InputStream jsonInput = this.getClass().getClassLoader().getResourceAsStream(fullPath);
+        InputStream jsonInput = this.getClass().getClassLoader().getResourceAsStream(jsonConfigPath);
         return objectMapper.readValue(jsonInput, BeanDTOWrapper.class);
     }
 

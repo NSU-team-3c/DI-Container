@@ -41,19 +41,23 @@ public class DependenciesManager {
     }
 
     private void addDependenciesToGraph(String beanName, Bean bean, DefaultDirectedGraph<String, DefaultEdge> graph) {
-        bean.getInjectedFields().forEach((field) -> {
-            Named namedAnnotation = field.getAnnotation(Named.class);
-            if (namedAnnotation != null && graph.containsVertex(namedAnnotation.value())) {
-                graph.addEdge(beanName, namedAnnotation.value());
-            }
-        });
+        if (bean != null) {
+            bean.getInjectedFields().forEach((field) -> {
+                Named namedAnnotation = field.getAnnotation(Named.class);
+                if (namedAnnotation != null && graph.containsVertex(namedAnnotation.value())) {
+                    graph.addEdge(beanName, namedAnnotation.value());
+                }
+            });
+        }
 
-        bean.getInjectedProviderFields().forEach((field) -> {
-            Named namedAnnotation = field.getAnnotation(Named.class);
-            if (namedAnnotation != null && graph.containsVertex(namedAnnotation.value())) {
-                graph.addEdge(beanName, namedAnnotation.value());
-            }
-        });
+        if (bean != null) {
+            bean.getInjectedProviderFields().forEach((field) -> {
+                Named namedAnnotation = field.getAnnotation(Named.class);
+                if (namedAnnotation != null && graph.containsVertex(namedAnnotation.value())) {
+                    graph.addEdge(beanName, namedAnnotation.value());
+                }
+            });
+        }
 
 
         Constructor<?> constructor = bean.getConstructor();

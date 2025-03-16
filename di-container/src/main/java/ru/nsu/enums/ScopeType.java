@@ -1,17 +1,12 @@
 package ru.nsu.enums;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public enum ScopeType {
-    SINGLETON("singletone"),
-    PROTOTYPE("prototype"),
-    THREAD("thread");
-
-    private final String text;
-
-    ScopeType(final String text) {
-        this.text = text;
-    }
-
-    public String toString() {
-        return text;
-    }
+    @JsonProperty("singleton")
+    SINGLETON,
+    @JsonProperty("prototype")
+    PROTOTYPE,
+    @JsonProperty("thread")
+    THREAD;
 }

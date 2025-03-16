@@ -1,4 +1,4 @@
-package ru.nsu.test;
+package simple.test;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -1,22 +1,17 @@
-package ru.nsu.test;
+package simple.test;
 
-
-import ru.nsu.enums.ScopeType;
-import ru.nsu.annotations.Wired;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.inject.Scope;
 
-
+@Data
+@NoArgsConstructor
 @Named("userService")
 public class UserService {
 
-//    @Wired
-//    private UserRepository userRepositorySingleton;
-
     @Inject
-    @Scope(ScopeType.SINGLETON)
     private UserRepository userRepositoryPrototype;
 
     public void getUserInfo() {

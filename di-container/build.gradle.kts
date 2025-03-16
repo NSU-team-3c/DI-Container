@@ -11,7 +11,10 @@ repositories {
 
 dependencies {
     implementation("org.projectlombok:lombok:1.18.28")
-    implementation("org.projectlombok:lombok:1.18.28")
+    annotationProcessor("org.projectlombok:lombok:1.18.28");
+    testImplementation("org.projectlombok:lombok:1.18.28")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.28");
+
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.0")
     implementation("javax.inject:javax.inject:1")
