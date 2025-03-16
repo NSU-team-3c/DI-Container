@@ -15,6 +15,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -138,7 +139,7 @@ public class Application {
     private Object injectField(Field field) {
         field.setAccessible(true);
         Named namedAnnotation = field.getAnnotation(Named.class);
-        String actualName = (namedAnnotation != null ? namedAnnotation.value() : field.getName());
+        String actualName = (namedAnnotation != null ? namedAnnotation.value() : field.getType().getName());
         Object fieldInstance = getBean(actualName);
         Bean newFieldBean;
         if (fieldInstance == null) {
