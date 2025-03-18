@@ -1,7 +1,7 @@
 package ru.nsu.app;
 
 import lombok.Data;
-import ru.nsu.bean.Bean;
+import ru.nsu.bean.BeanObject;
 import ru.nsu.context.ContextContainer;
 import ru.nsu.enums.ScopeType;
 import ru.nsu.exceptions.*;
@@ -15,7 +15,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 @Data
@@ -27,7 +26,7 @@ public class Application {
     }
 
     public <T> T getBean(String name) {
-        Bean bean = null;
+        BeanObject bean = null;
         var allBeans = context.getBeans();
         bean = allBeans.get(name);
         if (bean == null) {
@@ -60,12 +59,12 @@ public class Application {
         Collections.reverse(orderedBeanNames);
 
         orderedBeanNames.forEach(beanName -> {
-            Bean bean = beans.get(beanName);
+            BeanObject bean = beans.get(beanName);
             instantiateAndRegisterBean(bean);
         });
     }
 
-    private void instantiateAndRegisterBean(Bean bean) {
+    private void instantiateAndRegisterBean(BeanObject bean) {
         String beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
         ScopeType beanScope = bean.getScope();
         if (beanScope.equals(ScopeType.PROTOTYPE)){
@@ -82,7 +81,7 @@ public class Application {
         }
     }
 
-    private void invokePostConstruct(Object beanInstance, Bean bean) {
+    private void invokePostConstruct(Object beanInstance, BeanObject bean) {
         Method postConstructMethod = bean.getPostConstructMethod();
         if (postConstructMethod != null) {
             try {
@@ -95,7 +94,7 @@ public class Application {
     }
 
 
-    public Object createBeanInstance(Bean bean) {
+    public Object createBeanInstance(BeanObject bean) {
         String beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
 
         try {
@@ -141,7 +140,7 @@ public class Application {
         Named namedAnnotation = field.getAnnotation(Named.class);
         String actualName = (namedAnnotation != null ? namedAnnotation.value() : field.getType().getName());
         Object fieldInstance = getBean(actualName);
-        Bean newFieldBean;
+        BeanObject newFieldBean;
         if (fieldInstance == null) {
             newFieldBean = context.getBeans().get(actualName);
             fieldInstance = createAndRegisterBeanDependency(newFieldBean);
@@ -150,7 +149,7 @@ public class Application {
     }
 
 
-    private Object createAndRegisterBeanDependency(Bean bean) {
+    private Object createAndRegisterBeanDependency(BeanObject bean) {
         Object beanInstance = createBeanInstance(bean);
         invokePostConstruct(beanInstance, bean);
         switch (bean.getScope()) {
@@ -197,7 +196,7 @@ public class Application {
 
                 // Если bean не найден, создаем его инстанс.
                 if (paramsResult == null) {
-                    Bean beanDefinition = context.getBeans().get(actualName);
+                    BeanObject beanDefinition = context.getBeans().get(actualName);
                     paramsResult = createAndRegisterBeanDependency(beanDefinition);
                 }
 

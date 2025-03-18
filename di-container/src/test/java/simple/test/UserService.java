@@ -12,11 +12,10 @@ import javax.inject.Named;
 public class UserService {
 
     @Inject
-    private UserRepository userRepositoryPrototype;
+    private UserRepository userRepositoryField;
 
     public void getUserInfo() {
-//        System.out.println("User Info (Singleton): " + userRepositorySingleton.getUserName());
-        System.out.println("User Info (Prototype): " + userRepositoryPrototype.getUserName());
+        System.out.println("User Info: " + userRepositoryField.getUserName());
     }
 
 }

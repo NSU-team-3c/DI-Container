@@ -14,7 +14,7 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Bean {
+public class BeanObject {
     private String className;
     private String name;
     private ScopeType scope;

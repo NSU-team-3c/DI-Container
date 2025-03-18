@@ -7,7 +7,9 @@ import lombok.Data;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
-import ru.nsu.bean.Bean;
+import ru.nsu.annotations.Bean;
+import ru.nsu.annotations.Configure;
+import ru.nsu.bean.BeanObject;
 import ru.nsu.bean.BeanDTO;
 import ru.nsu.bean.BeanDTOWrapper;
 import ru.nsu.enums.ScopeType;
@@ -30,36 +32,39 @@ import java.util.stream.Stream;
 @Data
 public class BeanScanner {
 
-    private Map<String, Bean> nameToBeansMap = new HashMap<>();
+    private Map<String, BeanObject> nameToBeansMap = new HashMap<>();
 
-    private Map<String, Bean> singletonScopes = new HashMap<>();
+    private Map<String, BeanObject> singletonScopes = new HashMap<>();
 
-    private Map<String, Bean> threadScopes = new HashMap<>();
+    private Map<String, BeanObject> threadScopes = new HashMap<>();
 
-    private Map<String, Bean> unknownScopes = new HashMap<>();
+    private Map<String, BeanObject> unknownScopes = new HashMap<>();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private List<BeanDTO> beansFromJson;
+    private List<BeanDTO> beansFromJson = new ArrayList<>();
+    private List<BeanDTO> beansFromAnnotations;
 
     public void scanAnnotatedClasses(String scanningDirectory, String jsonConfig) throws IOException {
         Reflections reflections = new Reflections(scanningDirectory,
                 new SubTypesScanner(false),
                 new TypeAnnotationsScanner());
 
-
-        this.beansFromJson = readBeans(jsonConfig).getBeans();
+        if (!Objects.equals(jsonConfig, "")) {
+            this.beansFromJson = readBeans(jsonConfig).getBeans();
+        }
+        this.beansFromAnnotations = parseBeanConfig(reflections.getTypesAnnotatedWith(Configure.class));
 
         Set<Class<?>> allClasses = reflections.getSubTypesOf(Object.class);
 
         for (Class<?> clazz : allClasses) {
             if (!clazz.isInterface() && isAvailableForInjection(clazz)) {
-                Bean bean = new Bean();
+                BeanObject bean = new BeanObject();
                 String namedAnnotationValue = Optional.ofNullable(clazz.getAnnotation(Named.class))
                         .map(Named::value)
                         .orElseThrow(() -> new ClazzException(clazz.getCanonicalName()));
 
-                BeanDTO beanDTO = Optional.ofNullable(findBeanInJson(namedAnnotationValue))
+                BeanDTO beanDTO = Optional.ofNullable(findBean(namedAnnotationValue))
                         .orElseThrow(() -> new BadJsonException(namedAnnotationValue, ". No configuration for bean with name."));
 
                 List<Field> injectedFields = new ArrayList<>();
@@ -106,10 +111,11 @@ public class BeanScanner {
                 }
             }
         }
+
     }
 
 
-    private void findConstructMethods(Class<?> clazz, Bean bean) {
+    private void findConstructMethods(Class<?> clazz, BeanObject bean) {
         Method postConstructMethod = null;
         Method preDestroyMethod = null;
 
@@ -153,6 +159,42 @@ public class BeanScanner {
         return objectMapper.readValue(jsonInput, BeanDTOWrapper.class);
     }
 
+    public List<BeanDTO> parseBeanConfig(Set<Class<?>> configClasses) {
+
+        List<BeanDTO> beans = new ArrayList<>();
+
+        for (Class<?> configClass : configClasses) {
+            if (configClass.isAnnotationPresent(Configure.class)) {
+                for (Method method : configClass.getDeclaredMethods()) {
+                    if (method.isAnnotationPresent(Bean.class)) {
+                        Bean beanAnnotation = method.getAnnotation(Bean.class);
+
+                        String beanName = beanAnnotation.name().isEmpty() ? method.getName() : beanAnnotation.name();
+
+                        BeanDTO beanDTO = getBeanDTO(configClass, beanAnnotation, beanName);
+
+                        beans.add(beanDTO);
+                    }
+                }
+            }
+        }
+
+        return beans;
+    }
+
+    private static BeanDTO getBeanDTO(Class<?> configClass, Bean beanAnnotation, String beanName) {
+        ScopeType scope = beanAnnotation.scope();
+
+        // Создаем объект BeanDTO
+        BeanDTO beanDTO = new BeanDTO();
+        beanDTO.setClassName(configClass.getCanonicalName());
+        beanDTO.setName(beanName);
+        beanDTO.setScope(scope);
+        beanDTO.setInitParams(new HashMap<>());  // Здесь можно добавить логику для инициализации параметров
+        beanDTO.setConstructorParams(new ArrayList<>());  // Также добавляем логику для параметров конструктора
+        return beanDTO;
+    }
+
 
     public void scanJsonConfig(String jsonConfigPath) throws ClassNotFoundException, IOException {
         this.beansFromJson = readBeans(jsonConfigPath).getBeans();
@@ -168,7 +210,7 @@ public class BeanScanner {
             }
             ScopeType scope = currentBean.getScope();
             String beanName = currentBean.getName();
-            Bean bean = new Bean();
+            BeanObject bean = new BeanObject();
             bean.setScope(scope);
             bean.setName(beanName);
             bean.setClassName(currentBean.getClassName());
@@ -226,12 +268,19 @@ public class BeanScanner {
     }
 
 
-    private BeanDTO findBeanInJson(String namedAnnotationValue) {
-        for (BeanDTO currentBeanJson : beansFromJson) {
-            if (namedAnnotationValue.equals(currentBeanJson.getName())) {
-                return currentBeanJson;
+    private BeanDTO findBean(String namedAnnotationValue) {
+        for (BeanDTO currentBean : beansFromJson) {
+            if (namedAnnotationValue.equals(currentBean.getName())) {
+                return currentBean;
             }
         }
+
+        for (BeanDTO currentBean : beansFromAnnotations) {
+            if (namedAnnotationValue.equals(currentBean.getName())) {
+                return currentBean;
+            }
+        }
+
         return null;
     }
 }
