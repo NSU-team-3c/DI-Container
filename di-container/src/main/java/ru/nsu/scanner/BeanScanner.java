@@ -53,7 +53,7 @@ public class BeanScanner {
 
     /**
      * Биндит классы и интерфейсы из-за свойства hashmap 1-1
-     * 
+     *
      * @param allClasses
      */
     private void autobind(Set<Class<?>> allClasses) {

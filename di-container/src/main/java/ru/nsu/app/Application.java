@@ -59,7 +59,7 @@ public class Application {
             bean = allBeans.get(tmp[tmp.length - 1]);
         }
         T result = switch (bean.getScope()) {
-            case SINGLETON -> (T) context.getSingletonInstances().get(name);
+            case SINGLETON -> getSingleton(name, bean);
             case PROTOTYPE -> (T) createBeanInstance(bean);
             case THREAD -> context.getThreadLocalBean(name);
             default -> {
@@ -71,6 +71,15 @@ public class Application {
         }
 
         return result;
+    }
+
+    public <T> T getSingleton(String name, BeanObject bean) {
+        if (context.getSingletonInstances().containsKey(name)) {
+            return (T) context.getSingletonInstances().get(name);
+        } else {
+            context.getSingletonInstances().put(name, createBeanInstance(bean));
+            return (T) context.getSingletonInstances().get(name);
+        }
     }
 
     public void instantiateAndRegisterBeans() {

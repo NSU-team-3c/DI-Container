@@ -3,6 +3,7 @@ import ru.nsu.app.Application;
 import ru.nsu.context.ContextContainer;
 import ru.nsu.scanner.BeanScanner;
 import simple.interfaceTest.Car;
+import simple.sequenceInject.Printer;
 import simple.test.UserService;
 
 import java.io.IOException;
@@ -37,5 +38,18 @@ public class SimpleTest {
 
         Car car = app.getBean("Car");
         car.drive();
+    }
+
+    @Test
+    public void testSequenceInject() throws IOException {
+        BeanScanner scanner = new BeanScanner();
+        scanner.scanAnnotatedClasses("simple.sequenceInject","");
+
+        ContextContainer context = new ContextContainer(scanner);
+        Application app = new Application(context);
+        app.instantiateAndRegisterBeans();
+
+        Printer printer = app.getBean("printer");
+        printer.print();
     }
 }
