@@ -7,7 +7,7 @@ import ru.nsu.annotations.Bean;
 @Configure
 public class Config {
 
-    @Bean(name = "userService", scope = ScopeType.SINGLETON)
+    @Bean(name = "userService", scope = ScopeType.THREAD)
     public UserService userService() {
         return new UserService();
     }

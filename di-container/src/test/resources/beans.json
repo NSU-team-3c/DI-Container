@@ -2,7 +2,7 @@
   "beans" : [
     {
       "name": "userRepo",
-      "scope": "singleton"
+      "scope": "thread"
     }
   ]
 }

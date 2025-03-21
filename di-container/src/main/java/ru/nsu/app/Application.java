@@ -61,7 +61,7 @@ public class Application {
         T result = switch (bean.getScope()) {
             case SINGLETON -> getSingleton(name, bean);
             case PROTOTYPE -> (T) createBeanInstance(bean);
-            case THREAD -> context.getThreadLocalBean(name);
+            case THREAD -> getThreadLocal(name, bean);
             default -> {
                 throw new BadJsonException(bean.getName(), ".No such bean scope: " + bean.getScope());
             }
@@ -80,6 +80,20 @@ public class Application {
             context.getSingletonInstances().put(name, createBeanInstance(bean));
             return (T) context.getSingletonInstances().get(name);
         }
+    }
+
+    public <T> T getThreadLocal(String name, BeanObject bean) {
+        var result = context.getThreadLocalBean(name);
+
+        if (result == null) {
+            var threadLocal = new ThreadLocal<>();
+            threadLocal.set(createBeanInstance(bean));
+            context.getThreadInstances().put(name, threadLocal);
+
+            result = context.getThreadLocalBean(name);
+        }
+
+        return (T) result;
     }
 
     public void instantiateAndRegisterBeans() {
