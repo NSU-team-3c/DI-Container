@@ -15,20 +15,18 @@ import java.util.function.Supplier;
 
 @Data
 public class ContextContainer {
-    private Map<String, BeanObject> beans = new HashMap<>();
+    private Map<String, BeanObject> beans;
     private Map<String, Object> singletonInstances = new HashMap<>();
     private List<String> orderedByDependenciesBeans = new ArrayList<>();
     private Map<String, ThreadLocal<Object>> threadInstances = new HashMap<>();
     private Map<String, Object> customBean = new HashMap<>();
     private BeanScanner beanScanner;
-    public Map<Class<?>, Class<?>> interfaceBindings = new HashMap<>();
+    private Map<String, Class<?>> interfaceBindings;
 
-    public void bind(Class<?> interfaceClass, Class<?> implementationClass) {
-        interfaceBindings.put(interfaceClass, implementationClass);
-    }
     public ContextContainer(BeanScanner beanScanner) {
         this.beanScanner = beanScanner;
         this.beans = beanScanner.getNameToBeansMap();
+        this.interfaceBindings = beanScanner.getInterfaceBindings();
         DependenciesManager resolver = new DependenciesManager(this.beans);
 
         this.orderedByDependenciesBeans = resolver.resolveDependencies();

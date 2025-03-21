@@ -2,6 +2,7 @@ import org.junit.jupiter.api.Test;
 import ru.nsu.app.Application;
 import ru.nsu.context.ContextContainer;
 import ru.nsu.scanner.BeanScanner;
+import simple.interfaceTest.Car;
 import simple.test.UserService;
 
 import java.io.IOException;
@@ -25,4 +26,16 @@ public class SimpleTest {
         assertSame(firstInstance, secondInstance, "Это синглетон бины и они должны быть всегда одинаковые");
     }
 
+    @Test
+    public void interfaceTest() throws IOException {
+        BeanScanner scanner = new BeanScanner();
+        scanner.scanAnnotatedClasses("simple.interfaceTest","");
+
+        ContextContainer context = new ContextContainer(scanner);
+        Application app = new Application(context);
+        app.instantiateAndRegisterBeans();
+
+        Car car = app.getBean("Car");
+        car.drive();
+    }
 }

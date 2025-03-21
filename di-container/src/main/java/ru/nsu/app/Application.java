@@ -25,6 +25,16 @@ public class Application {
         this.context = context;
     }
 
+    /**
+     * Получение бина по имени.
+     * Если найти не получается пытается достать объект из мапы биндинга интерфейсов на класс
+     *
+     * @param name bean name
+     *
+     * @return bean
+     *
+     * @param <T>
+     */
     public <T> T getBean(String name) {
         BeanObject bean = null;
         var allBeans = context.getBeans();
@@ -36,6 +46,17 @@ public class Application {
                     break;
                 }
             }
+        }
+
+        /*
+        * Если ничего не нашли по имени, возможно тогда надо искать по интерфейсам.
+        * Названия классов хранятся в виде: package.ClassName
+        * Для того чтобы достать имя класса разбиваем строку названия класса по точкам и забираем последний элемент
+        * Какой класс будет у объекта после такого биндинга зависит от удачи, но он точно будет реализовывать указанный интерфейс
+        */
+        if (bean == null) {
+            var tmp = context.getInterfaceBindings().get(name).getName().split("\\.");
+            bean = allBeans.get(tmp[tmp.length - 1]);
         }
         T result = switch (bean.getScope()) {
             case SINGLETON -> (T) context.getSingletonInstances().get(name);
@@ -60,6 +81,8 @@ public class Application {
 
         orderedBeanNames.forEach(beanName -> {
             BeanObject bean = beans.get(beanName);
+            System.out.println(bean);
+
             instantiateAndRegisterBean(bean);
         });
     }
