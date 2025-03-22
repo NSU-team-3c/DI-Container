@@ -4,7 +4,7 @@ import org.jgrapht.alg.cycle.CycleDetector;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
-import ru.nsu.bean.Bean;
+import ru.nsu.bean.BeanObject;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -16,9 +16,9 @@ import java.util.Map;
 
 public class DependenciesManager {
 
-    private final Map<String, Bean> beans;
+    private final Map<String, BeanObject> beans;
 
-    public DependenciesManager(Map<String, Bean> beans) {
+    public DependenciesManager(Map<String, BeanObject> beans) {
         this.beans = beans;
     }
 
@@ -40,7 +40,7 @@ public class DependenciesManager {
         return sortedBeans;
     }
 
-    private void addDependenciesToGraph(String beanName, Bean bean, DefaultDirectedGraph<String, DefaultEdge> graph) {
+    private void addDependenciesToGraph(String beanName, BeanObject bean, DefaultDirectedGraph<String, DefaultEdge> graph) {
         if (bean != null) {
             var injectedFields =  bean.getInjectedFields();
             if (injectedFields != null) {

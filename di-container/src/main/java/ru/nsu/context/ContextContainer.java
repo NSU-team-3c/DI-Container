@@ -2,7 +2,7 @@ package ru.nsu.context;
 
 import lombok.Data;
 import lombok.NonNull;
-import ru.nsu.bean.Bean;
+import ru.nsu.bean.BeanObject;
 import ru.nsu.enums.ScopeType;
 import ru.nsu.exceptions.SomethingBadException;
 import ru.nsu.scanner.BeanScanner;
@@ -15,20 +15,18 @@ import java.util.function.Supplier;
 
 @Data
 public class ContextContainer {
-    private Map<String, Bean> beans = new HashMap<>();
+    private Map<String, BeanObject> beans;
     private Map<String, Object> singletonInstances = new HashMap<>();
     private List<String> orderedByDependenciesBeans = new ArrayList<>();
     private Map<String, ThreadLocal<Object>> threadInstances = new HashMap<>();
     private Map<String, Object> customBean = new HashMap<>();
     private BeanScanner beanScanner;
-    public Map<Class<?>, Class<?>> interfaceBindings = new HashMap<>();
+    private Map<String, Class<?>> interfaceBindings;
 
-    public void bind(Class<?> interfaceClass, Class<?> implementationClass) {
-        interfaceBindings.put(interfaceClass, implementationClass);
-    }
     public ContextContainer(BeanScanner beanScanner) {
         this.beanScanner = beanScanner;
         this.beans = beanScanner.getNameToBeansMap();
+        this.interfaceBindings = beanScanner.getInterfaceBindings();
         DependenciesManager resolver = new DependenciesManager(this.beans);
 
         this.orderedByDependenciesBeans = resolver.resolveDependencies();
@@ -37,7 +35,7 @@ public class ContextContainer {
         Runtime.getRuntime().addShutdownHook(new Thread(this::cleanupBeans));
     }
 
-    public Bean findPrototypeBean(String beanName) {
+    public BeanObject findPrototypeBean(String beanName) {
         for (var currentBean : beans.values()) {
             if (currentBean.getName().equals(beanName) || currentBean.getClassName().equals(beanName)) {
                 if (currentBean.getScope().equals(ScopeType.PROTOTYPE)) {
@@ -61,12 +59,12 @@ public class ContextContainer {
         return singletonInstances.containsKey(beanName) || threadInstances.containsKey(beanName);
     }
 
-    public void registerSingletonBeanInstance(@NonNull Bean bean, Object beanInstance) {
+    public void registerSingletonBeanInstance(@NonNull BeanObject bean, Object beanInstance) {
         singletonInstances.put((bean.getName() != null ? bean.getName() : bean.getClassName()), beanInstance);
     }
 
 
-    public void registerThreadBeanInstance(@NonNull Bean bean, Supplier<?> beanSupplier) {
+    public void registerThreadBeanInstance(@NonNull BeanObject bean, Supplier<?> beanSupplier) {
         threadInstances.put((bean.getName() != null ? bean.getName() : bean.getClassName()), ThreadLocal.withInitial(beanSupplier));
     }
 
@@ -107,7 +105,7 @@ public class ContextContainer {
         var singletonInstances = this.getSingletonInstances();
         Collections.reverse(beanDefinitions);
         for (var currentBeanName : beanDefinitions) {
-            Bean bean = this.getBeans().get(currentBeanName);
+            BeanObject bean = this.getBeans().get(currentBeanName);
             Object beanInstance = null;
             if (bean == null) {
                 throw new RuntimeException("Почему-то такого бина нет");
@@ -141,7 +139,7 @@ public class ContextContainer {
                     potentialPrototypeDependency = ((Provider<?>) potentialPrototypeDependency).get();
                 }
                 if (potentialPrototypeDependency != null) {
-                    Bean prototypeBean = this.findPrototypeBean(potentialPrototypeDependency.getClass().getName());
+                    BeanObject prototypeBean = this.findPrototypeBean(potentialPrototypeDependency.getClass().getName());
                     if (prototypeBean != null && prototypeBean.getPreDestroyMethod() != null) {
                         invokePreDestroy(potentialPrototypeDependency, prototypeBean);
                     }
@@ -153,7 +151,7 @@ public class ContextContainer {
         }
     }
 
-    private void invokePreDestroy(Object beanInstance, Bean bean) {
+    private void invokePreDestroy(Object beanInstance, BeanObject bean) {
         if (bean.getPreDestroyMethod() != null) {
             try {
                 Method preDestroyMethod = bean.getPreDestroyMethod();

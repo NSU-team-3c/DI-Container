@@ -1,7 +1,7 @@
 package ru.nsu.app;
 
 import lombok.Data;
-import ru.nsu.bean.Bean;
+import ru.nsu.bean.BeanObject;
 import ru.nsu.context.ContextContainer;
 import ru.nsu.enums.ScopeType;
 import ru.nsu.exceptions.*;
@@ -15,7 +15,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 @Data
@@ -26,8 +25,18 @@ public class Application {
         this.context = context;
     }
 
+    /**
+     * Получение бина по имени.
+     * Если найти не получается пытается достать объект из мапы биндинга интерфейсов на класс
+     *
+     * @param name bean name
+     *
+     * @return bean
+     *
+     * @param <T>
+     */
     public <T> T getBean(String name) {
-        Bean bean = null;
+        BeanObject bean = null;
         var allBeans = context.getBeans();
         bean = allBeans.get(name);
         if (bean == null) {
@@ -38,10 +47,21 @@ public class Application {
                 }
             }
         }
+
+        /*
+        * Если ничего не нашли по имени, возможно тогда надо искать по интерфейсам.
+        * Названия классов хранятся в виде: package.ClassName
+        * Для того чтобы достать имя класса разбиваем строку названия класса по точкам и забираем последний элемент
+        * Какой класс будет у объекта после такого биндинга зависит от удачи, но он точно будет реализовывать указанный интерфейс
+        */
+        if (bean == null) {
+            var tmp = context.getInterfaceBindings().get(name).getName().split("\\.");
+            bean = allBeans.get(tmp[tmp.length - 1]);
+        }
         T result = switch (bean.getScope()) {
-            case SINGLETON -> (T) context.getSingletonInstances().get(name);
+            case SINGLETON -> getSingleton(name, bean);
             case PROTOTYPE -> (T) createBeanInstance(bean);
-            case THREAD -> context.getThreadLocalBean(name);
+            case THREAD -> getThreadLocal(name, bean);
             default -> {
                 throw new BadJsonException(bean.getName(), ".No such bean scope: " + bean.getScope());
             }
@@ -53,6 +73,29 @@ public class Application {
         return result;
     }
 
+    public <T> T getSingleton(String name, BeanObject bean) {
+        if (context.getSingletonInstances().containsKey(name)) {
+            return (T) context.getSingletonInstances().get(name);
+        } else {
+            context.getSingletonInstances().put(name, createBeanInstance(bean));
+            return (T) context.getSingletonInstances().get(name);
+        }
+    }
+
+    public <T> T getThreadLocal(String name, BeanObject bean) {
+        var result = context.getThreadLocalBean(name);
+
+        if (result == null) {
+            var threadLocal = new ThreadLocal<>();
+            threadLocal.set(createBeanInstance(bean));
+            context.getThreadInstances().put(name, threadLocal);
+
+            result = context.getThreadLocalBean(name);
+        }
+
+        return (T) result;
+    }
+
     public void instantiateAndRegisterBeans() {
         var beans = context.getBeans();
         var orderedBeanNames = context.getOrderedByDependenciesBeans();
@@ -60,12 +103,14 @@ public class Application {
         Collections.reverse(orderedBeanNames);
 
         orderedBeanNames.forEach(beanName -> {
-            Bean bean = beans.get(beanName);
+            BeanObject bean = beans.get(beanName);
+            System.out.println(bean);
+
             instantiateAndRegisterBean(bean);
         });
     }
 
-    private void instantiateAndRegisterBean(Bean bean) {
+    private void instantiateAndRegisterBean(BeanObject bean) {
         String beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
         ScopeType beanScope = bean.getScope();
         if (beanScope.equals(ScopeType.PROTOTYPE)){
@@ -82,7 +127,7 @@ public class Application {
         }
     }
 
-    private void invokePostConstruct(Object beanInstance, Bean bean) {
+    private void invokePostConstruct(Object beanInstance, BeanObject bean) {
         Method postConstructMethod = bean.getPostConstructMethod();
         if (postConstructMethod != null) {
             try {
@@ -95,7 +140,7 @@ public class Application {
     }
 
 
-    public Object createBeanInstance(Bean bean) {
+    public Object createBeanInstance(BeanObject bean) {
         String beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
 
         try {
@@ -141,7 +186,7 @@ public class Application {
         Named namedAnnotation = field.getAnnotation(Named.class);
         String actualName = (namedAnnotation != null ? namedAnnotation.value() : field.getType().getName());
         Object fieldInstance = getBean(actualName);
-        Bean newFieldBean;
+        BeanObject newFieldBean;
         if (fieldInstance == null) {
             newFieldBean = context.getBeans().get(actualName);
             fieldInstance = createAndRegisterBeanDependency(newFieldBean);
@@ -150,7 +195,7 @@ public class Application {
     }
 
 
-    private Object createAndRegisterBeanDependency(Bean bean) {
+    private Object createAndRegisterBeanDependency(BeanObject bean) {
         Object beanInstance = createBeanInstance(bean);
         invokePostConstruct(beanInstance, bean);
         switch (bean.getScope()) {
@@ -197,7 +242,7 @@ public class Application {
 
                 // Если bean не найден, создаем его инстанс.
                 if (paramsResult == null) {
-                    Bean beanDefinition = context.getBeans().get(actualName);
+                    BeanObject beanDefinition = context.getBeans().get(actualName);
                     paramsResult = createAndRegisterBeanDependency(beanDefinition);
                 }
 
