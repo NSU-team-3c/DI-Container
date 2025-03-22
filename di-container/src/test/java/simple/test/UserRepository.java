@@ -1,7 +1,13 @@
-package ru.nsu.test;
+package simple.test;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.inject.Named;
 import java.util.Random;
 
+@Data
+@Named("userRepo")
 public class UserRepository {
 
     private final String userName;
@@ -9,10 +15,6 @@ public class UserRepository {
     public UserRepository() {
         Random random = new Random();
         this.userName = "User" + random.nextInt(1000);
-    }
-
-    public String getUserName() {
-        return userName;
     }
 }
 
