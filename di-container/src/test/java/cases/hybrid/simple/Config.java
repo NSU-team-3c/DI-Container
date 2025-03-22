@@ -1,4 +1,4 @@
-package simple.test;
+package cases.hybrid.simple;
 
 import ru.nsu.annotations.Configure;
 import ru.nsu.enums.ScopeType;

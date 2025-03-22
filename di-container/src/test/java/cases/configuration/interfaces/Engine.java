@@ -1,4 +1,4 @@
-package simple.interfaceTest;
+package cases.configuration.interfaces;
 
 import javax.inject.Named;
 

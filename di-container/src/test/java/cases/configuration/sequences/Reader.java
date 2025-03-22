@@ -1,4 +1,4 @@
-package simple.sequenceInject;
+package cases.configuration.sequences;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

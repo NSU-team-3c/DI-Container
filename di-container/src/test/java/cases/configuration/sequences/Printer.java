@@ -1,4 +1,4 @@
-package simple.sequenceInject;
+package cases.configuration.sequences;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +14,10 @@ public class Printer {
     private Reader reader;
 
     public void print() {
-        System.out.println(this);
+        System.out.println(reader.getFile().getFile());
     }
 
+    public String getFileInfo() {
+        return reader.getFile().getFile();
+    }
 }

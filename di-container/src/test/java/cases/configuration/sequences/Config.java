@@ -1,4 +1,4 @@
-package simple.sequenceInject;
+package cases.configuration.sequences;
 
 import ru.nsu.annotations.Bean;
 import ru.nsu.annotations.Configure;
