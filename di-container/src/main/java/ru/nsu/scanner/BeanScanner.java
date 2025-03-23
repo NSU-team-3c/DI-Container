@@ -9,9 +9,9 @@ import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 import ru.nsu.annotations.Bean;
 import ru.nsu.annotations.Configure;
-import ru.nsu.bean.BeanObject;
 import ru.nsu.bean.BeanDTO;
 import ru.nsu.bean.BeanDTOWrapper;
+import ru.nsu.bean.BeanObject;
 import ru.nsu.enums.ScopeType;
 import ru.nsu.exceptions.BadJsonException;
 import ru.nsu.exceptions.ClazzException;
@@ -133,10 +133,12 @@ public class BeanScanner {
 
                 this.nameToBeansMap.put(namedAnnotationValue, bean);
                 switch (beanDTO.getScope()) {
-                    case PROTOTYPE -> {}
+                    case PROTOTYPE -> {
+                    }
                     case SINGLETON -> singletonScopes.put(namedAnnotationValue, bean);
                     case THREAD -> threadScopes.put(namedAnnotationValue, bean);
-                    default -> throw new BadJsonException(namedAnnotationValue, "Unknown bean scope " + bean.getScope());
+                    default ->
+                            throw new BadJsonException(namedAnnotationValue, "Unknown bean scope " + bean.getScope());
                 }
             }
         }

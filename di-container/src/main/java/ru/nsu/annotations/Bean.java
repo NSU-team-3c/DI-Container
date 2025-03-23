@@ -11,5 +11,6 @@ import java.lang.annotation.Target;
 @Target(value = {ElementType.METHOD})
 public @interface Bean {
     String name() default ""; // Имя бина, по умолчанию пустое.
+
     ScopeType scope() default ScopeType.SINGLETON;
 }

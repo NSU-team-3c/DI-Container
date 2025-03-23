@@ -1,6 +1,5 @@
 package cases.json.medium;
 
-import cases.json.easy.UserRepo;
 import lombok.Data;
 
 import javax.inject.Inject;
@@ -11,7 +10,7 @@ import javax.inject.Named;
 public class AirService {
 
     @Inject
-    private UserRepo userRepo;
+    private AirRepo airRepo;
 
     private String property1;
 
@@ -21,5 +20,6 @@ public class AirService {
         this.property1 = property1;
     }
 
-    public AirService() {}
+    public AirService() {
+    }
 }

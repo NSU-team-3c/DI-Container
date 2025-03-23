@@ -33,6 +33,7 @@ public class JsonEasyTest {
 
         assertNotSame(firstInstance, secondInstance, "must be different");
     }
+
     @Test
     public void easySettersTest() throws IOException {
         var app = TestUtils.initContainer(scanningDir, jsonConfig);
@@ -40,7 +41,7 @@ public class JsonEasyTest {
         UserService service = app.getBean("userService");
         UserRepo repo = app.getBean("userRepo");
 
-        assertEquals(service.getProperty1(), "hello");
+        assertEquals(service.getProperty1(), "value1");
         assertEquals(service.getProperty2(), 5);
         assertEquals(repo.getData(), "some info");
     }

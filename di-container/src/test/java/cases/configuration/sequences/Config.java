@@ -13,12 +13,12 @@ public class Config {
         return new Printer();
     }
 
-    @Bean(name="file", scope = ScopeType.THREAD)
+    @Bean(name = "file", scope = ScopeType.THREAD)
     public File file() {
         return new File();
     }
 
-    @Bean(name="reader", scope = ScopeType.THREAD)
+    @Bean(name = "reader", scope = ScopeType.THREAD)
     public Reader reader() {
         return new Reader();
     }

@@ -1,7 +1,7 @@
-package usage;
+package usage.hybrid;
 
-import org.junit.jupiter.api.Test;
 import cases.hybrid.simple.UserService;
+import org.junit.jupiter.api.Test;
 import utils.TestUtils;
 
 import java.io.IOException;

@@ -4,8 +4,9 @@ import lombok.Data;
 import ru.nsu.bean.BeanObject;
 import ru.nsu.context.ContextContainer;
 import ru.nsu.enums.ScopeType;
-import ru.nsu.exceptions.*;
-
+import ru.nsu.exceptions.BadJsonException;
+import ru.nsu.exceptions.ConstructorException;
+import ru.nsu.exceptions.SomethingBadException;
 
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -30,10 +31,8 @@ public class Application {
      * Если найти не получается пытается достать объект из мапы биндинга интерфейсов на бины
      *
      * @param name bean name
-     *
-     * @return bean
-     *
      * @param <T>
+     * @return bean
      */
     public <T> T getBean(String name) {
         BeanObject bean = null;
@@ -50,7 +49,7 @@ public class Application {
         }
 
         /*
-        */
+         */
         if (bean == null) {
             bean = allBeans.get(context.getInterfaceBindings().get(name));
             name = bean.getName();
@@ -110,7 +109,7 @@ public class Application {
     private void instantiateAndRegisterBean(BeanObject bean) {
         String beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
         ScopeType beanScope = bean.getScope();
-        if (beanScope.equals(ScopeType.PROTOTYPE)){
+        if (beanScope.equals(ScopeType.PROTOTYPE)) {
             return;
         }
         if (!context.containsBean(beanName)) {
@@ -196,8 +195,7 @@ public class Application {
         Object beanInstance = createBeanInstance(bean);
         invokePostConstruct(beanInstance, bean);
         switch (bean.getScope()) {
-            case THREAD ->
-                    context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
+            case THREAD -> context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
             case SINGLETON -> context.registerSingletonBeanInstance(bean, beanInstance);
             case PROTOTYPE -> {
             }

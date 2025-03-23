@@ -1,4 +1,4 @@
-package usage;
+package usage.configuration;
 
 import cases.configuration.interfaces.Car;
 import org.junit.jupiter.api.Test;
@@ -6,13 +6,13 @@ import utils.TestUtils;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class InterfaceTest {
 
     private final String packageDir = "cases.configuration.interfaces";
     private final String jsonConfig = "";
+
     @Test
     public void interfaceBindingTest() throws IOException {
         var app = TestUtils.initContainer(packageDir, jsonConfig);

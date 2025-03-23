@@ -1,11 +1,12 @@
-package usage;
+package usage.configuration;
 
 import cases.configuration.sequences.Printer;
 import org.junit.jupiter.api.Test;
 import utils.TestUtils;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class SequenceTest {
 

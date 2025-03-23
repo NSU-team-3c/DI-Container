@@ -73,17 +73,17 @@ public class ContextContainer {
         s.append("Context:{\n");
 
         s.append("singleton instances: \n");
-        for(String key:singletonInstances.keySet()){
+        for (String key : singletonInstances.keySet()) {
             Object bean = singletonInstances.get(key);
             s.append(key + " : " + singletonInstances.get(key).hashCode() + "=[");
             Field[] beanFields = bean.getClass().getDeclaredFields();
-            for(Field beanField:beanFields){
+            for (Field beanField : beanFields) {
                 try {
                     beanField.setAccessible(true);
                     Object beanFieldValue = beanField.get(bean);
-                    if(beanFieldValue !=null){
+                    if (beanFieldValue != null) {
                         s.append(beanField.getName() + " : " + beanFieldValue.hashCode());
-                    }else{
+                    } else {
                         s.append(beanField.getName() + " : null");
                     }
                 } catch (IllegalAccessException e) {
@@ -92,7 +92,6 @@ public class ContextContainer {
             }
             s.append("]\n");
         }
-
 
 
         s.append("}");

@@ -20,5 +20,6 @@ public class UserService {
         this.property1 = property1;
     }
 
-    public UserService() {}
+    public UserService() {
+    }
 }

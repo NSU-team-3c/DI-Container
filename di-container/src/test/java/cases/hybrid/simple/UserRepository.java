@@ -1,7 +1,6 @@
 package cases.hybrid.simple;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import javax.inject.Named;
 import java.util.Random;

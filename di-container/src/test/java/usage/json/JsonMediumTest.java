@@ -1,5 +1,8 @@
 package usage.json;
 
+import cases.json.medium.AirController;
+import cases.json.medium.AirRepo;
+import cases.json.medium.AirService;
 import org.junit.jupiter.api.Test;
 import utils.TestUtils;
 
@@ -24,6 +27,19 @@ public class JsonMediumTest {
 
         assertSame(firstInstanceService, secondInstanceService, "must be same");
         assertSame(firstInstanceController, secondInstanceController, "must be same");
+    }
+
+    @Test
+    public void testProvider() throws IOException {
+        var app = TestUtils.initContainer(scanningDir, jsonConfig);
+
+        AirController controller = app.getBean("airController");
+        AirService service = app.getBean("airService");
+        AirRepo repo = app.getBean("airRepo");
+
+        assertNotSame(repo, service.getAirRepo());
+        assertSame(service, controller.getAirService().get());
+        assertEquals(controller.getAirService().get().getAirRepo().getData(), "some info");
     }
 
     @Test
