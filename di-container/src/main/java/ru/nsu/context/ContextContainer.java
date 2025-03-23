@@ -21,7 +21,7 @@ public class ContextContainer {
     private Map<String, ThreadLocal<Object>> threadInstances = new HashMap<>();
     private Map<String, Object> customBean = new HashMap<>();
     private BeanScanner beanScanner;
-    private Map<String, Class<?>> interfaceBindings;
+    private Map<String, String> interfaceBindings;
 
     public ContextContainer(BeanScanner beanScanner) {
         this.beanScanner = beanScanner;

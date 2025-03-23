@@ -43,20 +43,17 @@ public class Application {
             for (var singleBean : allBeans.values()) {
                 if (singleBean.getClassName().equals(name) || singleBean.getName().equals(name)) {
                     bean = singleBean;
+                    name = singleBean.getName();
                     break;
                 }
             }
         }
 
         /*
-        * Если ничего не нашли по имени, возможно тогда надо искать по интерфейсам.
-        * Названия классов хранятся в виде: package.ClassName
-        * Для того чтобы достать имя класса разбиваем строку названия класса по точкам и забираем последний элемент
-        * Какой класс будет у объекта после такого биндинга зависит от удачи, но он точно будет реализовывать указанный интерфейс
         */
         if (bean == null) {
-            var tmp = context.getInterfaceBindings().get(name).getName().split("\\.");
-            bean = allBeans.get(tmp[tmp.length - 1]);
+            bean = allBeans.get(context.getInterfaceBindings().get(name));
+            name = bean.getName();
         }
         T result = switch (bean.getScope()) {
             case SINGLETON -> getSingleton(name, bean);
@@ -271,7 +268,9 @@ public class Application {
 
     private Method findMethodByNameAndParameterType(Class<?> clazz, String methodName, Object value) throws NoSuchMethodException {
         for (Method method : clazz.getMethods()) {
-            if (method.getName().equals(methodName) && method.getParameterTypes().length == 1 && method.getParameterTypes()[0].isAssignableFrom(value.getClass())) {
+            if (method.getName().equals(methodName) &&
+                    method.getParameterTypes().length == 1 &&
+                    method.getParameterTypes()[0].isAssignableFrom(value.getClass())) {
                 return method;
             }
         }

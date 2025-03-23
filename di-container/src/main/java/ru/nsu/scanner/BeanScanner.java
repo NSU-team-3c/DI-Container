@@ -45,11 +45,7 @@ public class BeanScanner {
     private List<BeanDTO> beansFromJson = new ArrayList<>();
     private List<BeanDTO> beansFromAnnotations;
 
-    private Map<String, Class<?>> interfaceBindings = new HashMap<>();
-
-    private void bind(Class<?> interfaceClass, Class<?> implementationClass) {
-        interfaceBindings.put(interfaceClass.getName(), implementationClass);
-    }
+    private Map<String, String> interfaceBindings = new HashMap<>();
 
     /**
      * Биндит классы и интерфейсы из-за свойства hashmap 1-1
@@ -57,11 +53,22 @@ public class BeanScanner {
      * @param allClasses
      */
     private void autobind(Set<Class<?>> allClasses) {
+        var set = nameToBeansMap.entrySet();
+
         for (Class<?> clazz : allClasses) {
             if (clazz.isInterface()) continue;
             Class<?>[] interfaces = clazz.getInterfaces();
+            if (interfaces.length == 0) continue;
+
+            var optionalBeanName = set.stream().filter(x ->
+                    Objects.equals(x.getValue().getClassName(), clazz.getName())).findFirst();
+
+            if (optionalBeanName.isEmpty()) {
+                continue;
+            }
+
             for (Class<?> iface : interfaces) {
-                bind(iface, clazz);
+                interfaceBindings.put(iface.getName(), optionalBeanName.get().getValue().getName());
             }
         }
     }
@@ -78,7 +85,6 @@ public class BeanScanner {
 
         Set<Class<?>> allClasses = reflections.getSubTypesOf(Object.class);
 
-        autobind(allClasses);
 
         for (Class<?> clazz : allClasses) {
             if (!clazz.isInterface() && isAvailableForInjection(clazz)) {
@@ -134,6 +140,8 @@ public class BeanScanner {
                 }
             }
         }
+
+        autobind(allClasses);
 
     }
 
