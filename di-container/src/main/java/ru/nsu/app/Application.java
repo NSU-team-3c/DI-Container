@@ -27,7 +27,7 @@ public class Application {
 
     /**
      * Получение бина по имени.
-     * Если найти не получается пытается достать объект из мапы биндинга интерфейсов на класс
+     * Если найти не получается пытается достать объект из мапы биндинга интерфейсов на бины
      *
      * @param name bean name
      *
@@ -256,7 +256,7 @@ public class Application {
         }
         for (Map.Entry<String, Object> entry : initParams.entrySet()) {
             try {
-                String methodName = entry.getKey();
+                String methodName = "set" + entry.getKey().substring(0, 1).toUpperCase() + entry.getKey().substring(1);
                 Object value = entry.getValue();
                 Method setterMethod = findMethodByNameAndParameterType(instance.getClass(), methodName, value);
                 setterMethod.invoke(instance, value);
