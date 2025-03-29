@@ -116,12 +116,10 @@ public class ContextContainer {
             } else if (bean.getScope().equals(ScopeType.PROTOTYPE)) {
                 continue;
             }
-            if (beanInstance == null) {
-                throw new SomethingBadException(currentBeanName + "Error in shutdownHookService, can't found bean instance with this name.");
+            if (beanInstance != null) {
+                checkForPrototypeBeans(beanInstance);
+                invokePreDestroy(beanInstance, bean);
             }
-            checkForPrototypeBeans(beanInstance);
-            invokePreDestroy(beanInstance, bean);
-
         }
     }
 
