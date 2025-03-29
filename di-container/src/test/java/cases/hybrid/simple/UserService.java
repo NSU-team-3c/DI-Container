@@ -1,4 +1,4 @@
-package simple.test;
+package cases.hybrid.simple;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

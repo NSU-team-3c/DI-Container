@@ -1,10 +1,9 @@
 package ru.nsu.bean;
 
-import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 import ru.nsu.enums.ScopeType;
 
-import javax.inject.Scope;
 import java.util.List;
 import java.util.Map;
 

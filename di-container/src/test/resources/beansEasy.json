@@ -1,0 +1,24 @@
+{
+  "beans": [
+    {
+      "class": "cases.json.easy.UserService",
+      "name": "userService",
+      "scope": "singleton",
+      "initParams": {
+        "property1": "value1",
+        "property2": 5
+      },
+      "constructorParams": [
+        "hello"
+      ]
+    },
+    {
+      "class": "cases.json.easy.UserRepo",
+      "name": "userRepo",
+      "scope": "prototype",
+      "initParams": {
+        "data": "some info"
+      }
+    }
+  ]
+}

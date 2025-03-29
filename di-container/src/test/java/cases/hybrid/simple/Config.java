@@ -1,8 +1,8 @@
-package simple.test;
+package cases.hybrid.simple;
 
+import ru.nsu.annotations.Bean;
 import ru.nsu.annotations.Configure;
 import ru.nsu.enums.ScopeType;
-import ru.nsu.annotations.Bean;
 
 @Configure
 public class Config {

@@ -1,9 +1,5 @@
 package ru.nsu.utils;
 
-import ru.nsu.exceptions.IncorrectFieldAnnotationsException;
-
-import java.lang.reflect.Field;
-
 public class Utils {
 //    public static void isAnnotationValid(Field field) throws IncorrectFieldAnnotationsException {
 //

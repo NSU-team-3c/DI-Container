@@ -29,7 +29,7 @@ public class DependenciesManager {
         beans.forEach((beanName, beanDefinition) -> addDependenciesToGraph(beanName, beanDefinition, graph));
 
         CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<>(graph);
-        if (cycleDetector.detectCycles()){
+        if (cycleDetector.detectCycles()) {
             throw new RuntimeException("Detected cyclic dependencies among beans");
         }
 
@@ -42,7 +42,7 @@ public class DependenciesManager {
 
     private void addDependenciesToGraph(String beanName, BeanObject bean, DefaultDirectedGraph<String, DefaultEdge> graph) {
         if (bean != null) {
-            var injectedFields =  bean.getInjectedFields();
+            var injectedFields = bean.getInjectedFields();
             if (injectedFields != null) {
                 injectedFields.forEach((field) -> {
                     Named namedAnnotation = field.getAnnotation(Named.class);
@@ -54,7 +54,7 @@ public class DependenciesManager {
         }
 
         if (bean != null) {
-            var injectedProviderFieldsFields =  bean.getInjectedProviderFields();
+            var injectedProviderFieldsFields = bean.getInjectedProviderFields();
             if (injectedProviderFieldsFields != null) {
                 injectedProviderFieldsFields.forEach((field) -> {
                     Named namedAnnotation = field.getAnnotation(Named.class);

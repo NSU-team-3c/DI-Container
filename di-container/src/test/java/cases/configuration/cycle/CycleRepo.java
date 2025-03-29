@@ -1,4 +1,4 @@
-package simple.sequenceInject;
+package cases.configuration.cycle;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,8 +8,9 @@ import javax.inject.Named;
 
 @Data
 @NoArgsConstructor
-@Named("reader")
-public class Reader {
+@Named("cycleRepo")
+public class CycleRepo {
     @Inject
-    private File file;
+    @Named("cycleService")
+    private CycleService cycleService;
 }

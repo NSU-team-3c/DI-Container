@@ -9,9 +9,9 @@ import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
 import ru.nsu.annotations.Bean;
 import ru.nsu.annotations.Configure;
-import ru.nsu.bean.BeanObject;
 import ru.nsu.bean.BeanDTO;
 import ru.nsu.bean.BeanDTOWrapper;
+import ru.nsu.bean.BeanObject;
 import ru.nsu.enums.ScopeType;
 import ru.nsu.exceptions.BadJsonException;
 import ru.nsu.exceptions.ClazzException;
@@ -45,11 +45,7 @@ public class BeanScanner {
     private List<BeanDTO> beansFromJson = new ArrayList<>();
     private List<BeanDTO> beansFromAnnotations;
 
-    private Map<String, Class<?>> interfaceBindings = new HashMap<>();
-
-    private void bind(Class<?> interfaceClass, Class<?> implementationClass) {
-        interfaceBindings.put(interfaceClass.getName(), implementationClass);
-    }
+    private Map<String, String> interfaceBindings = new HashMap<>();
 
     /**
      * Биндит классы и интерфейсы из-за свойства hashmap 1-1
@@ -57,11 +53,22 @@ public class BeanScanner {
      * @param allClasses
      */
     private void autobind(Set<Class<?>> allClasses) {
+        var set = nameToBeansMap.entrySet();
+
         for (Class<?> clazz : allClasses) {
             if (clazz.isInterface()) continue;
             Class<?>[] interfaces = clazz.getInterfaces();
+            if (interfaces.length == 0) continue;
+
+            var optionalBeanName = set.stream().filter(x ->
+                    Objects.equals(x.getValue().getClassName(), clazz.getName())).findFirst();
+
+            if (optionalBeanName.isEmpty()) {
+                continue;
+            }
+
             for (Class<?> iface : interfaces) {
-                bind(iface, clazz);
+                interfaceBindings.put(iface.getName(), optionalBeanName.get().getValue().getName());
             }
         }
     }
@@ -78,7 +85,6 @@ public class BeanScanner {
 
         Set<Class<?>> allClasses = reflections.getSubTypesOf(Object.class);
 
-        autobind(allClasses);
 
         for (Class<?> clazz : allClasses) {
             if (!clazz.isInterface() && isAvailableForInjection(clazz)) {
@@ -127,13 +133,17 @@ public class BeanScanner {
 
                 this.nameToBeansMap.put(namedAnnotationValue, bean);
                 switch (beanDTO.getScope()) {
-                    case PROTOTYPE -> {}
+                    case PROTOTYPE -> {
+                    }
                     case SINGLETON -> singletonScopes.put(namedAnnotationValue, bean);
                     case THREAD -> threadScopes.put(namedAnnotationValue, bean);
-                    default -> throw new BadJsonException(namedAnnotationValue, "Unknown bean scope " + bean.getScope());
+                    default ->
+                            throw new BadJsonException(namedAnnotationValue, "Unknown bean scope " + bean.getScope());
                 }
             }
         }
+
+        autobind(allClasses);
 
     }
 

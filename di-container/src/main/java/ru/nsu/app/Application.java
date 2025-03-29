@@ -4,8 +4,9 @@ import lombok.Data;
 import ru.nsu.bean.BeanObject;
 import ru.nsu.context.ContextContainer;
 import ru.nsu.enums.ScopeType;
-import ru.nsu.exceptions.*;
-
+import ru.nsu.exceptions.BadJsonException;
+import ru.nsu.exceptions.ConstructorException;
+import ru.nsu.exceptions.SomethingBadException;
 
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -27,13 +28,11 @@ public class Application {
 
     /**
      * Получение бина по имени.
-     * Если найти не получается пытается достать объект из мапы биндинга интерфейсов на класс
+     * Если найти не получается пытается достать объект из мапы биндинга интерфейсов на бины
      *
      * @param name bean name
-     *
-     * @return bean
-     *
      * @param <T>
+     * @return bean
      */
     public <T> T getBean(String name) {
         BeanObject bean = null;
@@ -43,20 +42,17 @@ public class Application {
             for (var singleBean : allBeans.values()) {
                 if (singleBean.getClassName().equals(name) || singleBean.getName().equals(name)) {
                     bean = singleBean;
+                    name = singleBean.getName();
                     break;
                 }
             }
         }
 
         /*
-        * Если ничего не нашли по имени, возможно тогда надо искать по интерфейсам.
-        * Названия классов хранятся в виде: package.ClassName
-        * Для того чтобы достать имя класса разбиваем строку названия класса по точкам и забираем последний элемент
-        * Какой класс будет у объекта после такого биндинга зависит от удачи, но он точно будет реализовывать указанный интерфейс
-        */
+         */
         if (bean == null) {
-            var tmp = context.getInterfaceBindings().get(name).getName().split("\\.");
-            bean = allBeans.get(tmp[tmp.length - 1]);
+            bean = allBeans.get(context.getInterfaceBindings().get(name));
+            name = bean.getName();
         }
         T result = switch (bean.getScope()) {
             case SINGLETON -> getSingleton(name, bean);
@@ -113,7 +109,7 @@ public class Application {
     private void instantiateAndRegisterBean(BeanObject bean) {
         String beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
         ScopeType beanScope = bean.getScope();
-        if (beanScope.equals(ScopeType.PROTOTYPE)){
+        if (beanScope.equals(ScopeType.PROTOTYPE)) {
             return;
         }
         if (!context.containsBean(beanName)) {
@@ -199,8 +195,7 @@ public class Application {
         Object beanInstance = createBeanInstance(bean);
         invokePostConstruct(beanInstance, bean);
         switch (bean.getScope()) {
-            case THREAD ->
-                    context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
+            case THREAD -> context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
             case SINGLETON -> context.registerSingletonBeanInstance(bean, beanInstance);
             case PROTOTYPE -> {
             }
@@ -259,7 +254,7 @@ public class Application {
         }
         for (Map.Entry<String, Object> entry : initParams.entrySet()) {
             try {
-                String methodName = entry.getKey();
+                String methodName = "set" + entry.getKey().substring(0, 1).toUpperCase() + entry.getKey().substring(1);
                 Object value = entry.getValue();
                 Method setterMethod = findMethodByNameAndParameterType(instance.getClass(), methodName, value);
                 setterMethod.invoke(instance, value);
@@ -271,7 +266,9 @@ public class Application {
 
     private Method findMethodByNameAndParameterType(Class<?> clazz, String methodName, Object value) throws NoSuchMethodException {
         for (Method method : clazz.getMethods()) {
-            if (method.getName().equals(methodName) && method.getParameterTypes().length == 1 && method.getParameterTypes()[0].isAssignableFrom(value.getClass())) {
+            if (method.getName().equals(methodName) &&
+                    method.getParameterTypes().length == 1 &&
+                    method.getParameterTypes()[0].isAssignableFrom(value.getClass())) {
                 return method;
             }
         }

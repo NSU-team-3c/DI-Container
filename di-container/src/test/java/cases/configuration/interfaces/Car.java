@@ -1,4 +1,4 @@
-package simple.interfaceTest;
+package cases.configuration.interfaces;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,8 +14,16 @@ public class Car {
     @Inject
     private Engine engine;
 
+    @Inject
+    private GasEngine gasEngine;
+
+    @Inject
+    private ElectricEngine electricEngine;
+
     public void drive() {
         engine.start();
+        gasEngine.start();
+        electricEngine.start();
         System.out.println("Car is driving...");
     }
 }
