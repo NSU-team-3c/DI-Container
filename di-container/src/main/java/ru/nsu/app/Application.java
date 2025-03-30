@@ -7,6 +7,7 @@ import ru.nsu.enums.ScopeType;
 import ru.nsu.exceptions.BadJsonException;
 import ru.nsu.exceptions.ConstructorException;
 import ru.nsu.exceptions.SomethingBadException;
+import ru.nsu.utils.Utils;
 
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -82,7 +83,6 @@ public class Application {
             var threadLocal = new ThreadLocal<>();
             threadLocal.set(createBeanInstance(bean));
             context.getThreadInstances().put(name, threadLocal);
-
             result = context.getThreadLocalBean(name);
         }
 
@@ -96,26 +96,24 @@ public class Application {
         Collections.reverse(orderedBeanNames);
 
         orderedBeanNames.forEach(beanName -> {
-            BeanObject bean = beans.get(beanName);
-            System.out.println(bean);
-
+            var bean = beans.get(beanName);
             instantiateAndRegisterBean(bean);
         });
     }
 
     private void instantiateAndRegisterBean(BeanObject bean) {
-        String beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
-        ScopeType beanScope = bean.getScope();
+        var beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
+        var beanScope = bean.getScope();
         if (beanScope.equals(ScopeType.PROTOTYPE)) {
             return;
         }
         if (!context.containsBean(beanName)) {
-            Object beanInstance = createBeanInstance(bean);
+            var beanInstance = createBeanInstance(bean);
             invokePostConstruct(beanInstance, bean);
-            if (beanScope.equals(ScopeType.THREAD)) {
-                context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
-            } else if (beanScope.equals(ScopeType.SINGLETON)) {
-                context.registerSingletonBeanInstance(bean, beanInstance);
+
+            switch (beanScope) {
+                case THREAD -> context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
+                case SINGLETON -> context.registerSingletonBeanInstance(bean, beanInstance);
             }
         }
     }
@@ -127,14 +125,14 @@ public class Application {
                 postConstructMethod.setAccessible(true);
                 postConstructMethod.invoke(beanInstance);
             } catch (Exception e) {
-                throw new SomethingBadException(bean.getName() + ": Failed to invoke PostConstruct method");
+                throw new SomethingBadException(bean.getName() + ": failed on post constructor method");
             }
         }
     }
 
 
     public Object createBeanInstance(BeanObject bean) {
-        String beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
+        var beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
 
         try {
             Class<?> beanClass = Class.forName(bean.getClassName());
@@ -169,7 +167,7 @@ public class Application {
             applyInitParams(instance, bean.getInitParams());
             return instance;
         } catch (Exception e) {
-            throw new ConstructorException(beanName, "Failed to create instance. " + e.getMessage());
+            throw new ConstructorException(beanName, "failed on instance creation " + e.getMessage());
         }
     }
 
@@ -194,11 +192,10 @@ public class Application {
         switch (bean.getScope()) {
             case THREAD -> context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
             case SINGLETON -> context.registerSingletonBeanInstance(bean, beanInstance);
-            case PROTOTYPE -> {
-            }
+            case PROTOTYPE -> {}
         }
         if (beanInstance == null) {
-            throw new SomethingBadException(bean.getName() + " Error in creating of dependency, can't create instance for this name.");
+            throw new SomethingBadException(bean.getName() + " dependency error");
         }
 
         return beanInstance;
@@ -251,7 +248,7 @@ public class Application {
         }
         for (Map.Entry<String, Object> entry : initParams.entrySet()) {
             try {
-                String methodName = "set" + entry.getKey().substring(0, 1).toUpperCase() + entry.getKey().substring(1);
+                String methodName = Utils.createSetMethodName(entry.getKey());
                 Object value = entry.getValue();
                 Method setterMethod = findMethodByNameAndParameterType(instance.getClass(), methodName, value);
                 setterMethod.invoke(instance, value);

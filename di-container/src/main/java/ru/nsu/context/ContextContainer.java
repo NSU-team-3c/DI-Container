@@ -104,7 +104,7 @@ public class ContextContainer {
             BeanObject bean = this.getBeans().get(currentBeanName);
             Object beanInstance = null;
             if (bean == null) {
-                throw new RuntimeException("There is no such bean");
+                throw new RuntimeException("bean not found");
             }
 
             switch (bean.getScope()) {
@@ -112,7 +112,7 @@ public class ContextContainer {
                 case THREAD -> beanInstance = this.getThreadLocalBean(currentBeanName);
                 case PROTOTYPE -> beanInstance = null;
                 default -> {
-                    throw new RuntimeException("Unknown scope");
+                    throw new RuntimeException("unknown scope");
                 }
             }
 
@@ -130,20 +130,19 @@ public class ContextContainer {
             try {
                 field.setAccessible(true);
 
-                Object potentialPrototypeDependency = field.get(beanInstance);
+                var prototypeDep = field.get(beanInstance);
 
-                if (potentialPrototypeDependency instanceof Provider) {
-                    potentialPrototypeDependency = ((Provider<?>) potentialPrototypeDependency).get();
+                if (prototypeDep instanceof Provider) {
+                    prototypeDep = ((Provider<?>) prototypeDep).get();
                 }
-                if (potentialPrototypeDependency != null) {
-                    BeanObject prototypeBean = this.findPrototypeBean(potentialPrototypeDependency.getClass().getName());
+                if (prototypeDep != null) {
+                    BeanObject prototypeBean = this.findPrototypeBean(prototypeDep.getClass().getName());
                     if (prototypeBean != null && prototypeBean.getPreDestroyMethod() != null) {
-                        invokePreDestroy(potentialPrototypeDependency, prototypeBean);
+                        invokePreDestroy(prototypeDep, prototypeBean);
                     }
                 }
             } catch (IllegalAccessException e) {
-                throw new SomethingBadException(field.getName() + "Exception with PreDestroy method " +
-                        "of the prototype field of the singleton bean");
+                throw new SomethingBadException(field.getName() + " predestroy failed");
             }
         }
     }
@@ -155,7 +154,7 @@ public class ContextContainer {
                 preDestroyMethod.setAccessible(true);
                 preDestroyMethod.invoke(beanInstance);
             } catch (Exception e) {
-                throw new SomethingBadException(bean.getName() + "Exception with invoking of PreDestroy method");
+                throw new SomethingBadException(bean.getName() + "can't invoke predestroy method");
             }
         }
     }

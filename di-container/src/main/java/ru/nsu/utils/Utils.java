@@ -26,9 +26,7 @@ public class Utils {
 //        return name;
 //    }
 
-//    public static String getDefaultName(Class<?> item) {
-//        var a = item.getTypeName();
-//        return a.substring(0, 1).toLowerCase() +
-//                a.substring(1);
-//    }
+    public static String createSetMethodName(String entry) {
+       return "set" + entry.substring(0, 1).toUpperCase() + entry.substring(1);
+    }
 }
