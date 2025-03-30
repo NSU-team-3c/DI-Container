@@ -1,8 +1,6 @@
-{
-  "beans": [
+[
     {
       "name": "userRepo",
       "scope": "thread"
     }
   ]
-}

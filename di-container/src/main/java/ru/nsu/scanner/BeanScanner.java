@@ -1,5 +1,6 @@
 package ru.nsu.scanner;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -10,7 +11,6 @@ import org.reflections.scanners.TypeAnnotationsScanner;
 import ru.nsu.annotations.Bean;
 import ru.nsu.annotations.Configure;
 import ru.nsu.bean.BeanDTO;
-import ru.nsu.bean.BeanDTOWrapper;
 import ru.nsu.bean.BeanObject;
 import ru.nsu.enums.ScopeType;
 import ru.nsu.exceptions.BadJsonException;
@@ -26,7 +26,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Data
@@ -79,7 +78,7 @@ public class BeanScanner {
                 new TypeAnnotationsScanner());
 
         if (!Objects.equals(jsonConfig, "")) {
-            this.beansFromJson = readBeans(jsonConfig).getBeans();
+            this.beansFromJson = readBeans(jsonConfig);
         }
         this.beansFromAnnotations = parseBeanConfig(reflections.getTypesAnnotatedWith(Configure.class));
 
@@ -187,9 +186,9 @@ public class BeanScanner {
     }
 
 
-    private BeanDTOWrapper readBeans(String jsonConfigPath) throws IOException {
+    private List<BeanDTO> readBeans(String jsonConfigPath) throws IOException {
         InputStream jsonInput = this.getClass().getClassLoader().getResourceAsStream(jsonConfigPath);
-        return objectMapper.readValue(jsonInput, BeanDTOWrapper.class);
+        return objectMapper.readValue(jsonInput, new TypeReference<List<BeanDTO>>(){});
     }
 
     public List<BeanDTO> parseBeanConfig(Set<Class<?>> configClasses) {
@@ -223,48 +222,9 @@ public class BeanScanner {
         beanDTO.setClassName(configClass.getCanonicalName());
         beanDTO.setName(beanName);
         beanDTO.setScope(scope);
-        beanDTO.setInitParams(new HashMap<>());  // Здесь можно добавить логику для инициализации параметров
-        beanDTO.setConstructorParams(new ArrayList<>());  // Также добавляем логику для параметров конструктора
+        beanDTO.setInitParams(new HashMap<>());
+        beanDTO.setConstructorParams(new ArrayList<>());
         return beanDTO;
-    }
-
-
-    public void scanJsonConfig(String jsonConfigPath) throws ClassNotFoundException, IOException {
-        this.beansFromJson = readBeans(jsonConfigPath).getBeans();
-        for (BeanDTO currentBean : beansFromJson) {
-            if (currentBean.getName() == null) {
-                throw new BadJsonException("unknown", "No name field for this json");
-            }
-            if (currentBean.getScope() == null) {
-                throw new BadJsonException(currentBean.getName(), "No scope field for this bean in json");
-            }
-            if (currentBean.getClassName() == null) {
-                throw new BadJsonException(currentBean.getName(), "No className field for this bean in json");
-            }
-            ScopeType scope = currentBean.getScope();
-            String beanName = currentBean.getName();
-            BeanObject bean = new BeanObject();
-            bean.setScope(scope);
-            bean.setName(beanName);
-            bean.setClassName(currentBean.getClassName());
-            bean.setInitParams(currentBean.getInitParams());
-
-            if (currentBean.getConstructorParams() != null && !currentBean.getConstructorParams().isEmpty()) {
-                List<String> paramTypeNames = currentBean.getConstructorParams().stream()
-                        .map(Object::toString)
-                        .collect(Collectors.toList());
-                Constructor<?> constructor = findAndSetConstructor(currentBean.getClassName(), paramTypeNames);
-                bean.setConstructor(constructor);
-            }
-            switch (scope) {
-                case SINGLETON -> singletonScopes.put(beanName, bean);
-                case PROTOTYPE -> {
-                }
-                case THREAD -> threadScopes.put(beanName, bean);
-                default -> throw new BadJsonException(beanName, "Unknown scope.");
-            }
-            nameToBeansMap.put(beanName, bean);
-        }
     }
 
 

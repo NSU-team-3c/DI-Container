@@ -1,5 +1,4 @@
-{
-  "beans": [
+[
     {
       "class": "cases.json.easy.UserService",
       "name": "userService",
@@ -20,5 +19,4 @@
         "data": "some info"
       }
     }
-  ]
-}
+]

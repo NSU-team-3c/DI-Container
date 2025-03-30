@@ -1,5 +1,4 @@
-{
-  "beans": [
+[
     {
       "class": "cases.json.medium.AirRepo",
       "name": "airRepo",
@@ -28,5 +27,4 @@
         "Provider<cases.json.medium.AirService>"
       ]
     }
-  ]
-}
+]
