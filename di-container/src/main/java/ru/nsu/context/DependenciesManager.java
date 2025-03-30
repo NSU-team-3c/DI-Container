@@ -30,7 +30,7 @@ public class DependenciesManager {
 
         CycleDetector<String, DefaultEdge> cycleDetector = new CycleDetector<>(graph);
         if (cycleDetector.detectCycles()) {
-            throw new RuntimeException("Detected cyclic dependencies among beans");
+            throw new RuntimeException("Detected cyclic dependencies");
         }
 
         TopologicalOrderIterator<String, DefaultEdge> orderIterator = new TopologicalOrderIterator<>(graph);
