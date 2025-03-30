@@ -48,11 +48,7 @@ public class ContextContainer {
 
 
     public <T> T getThreadLocalBean(String beanName) {
-        ThreadLocal<?> threadLocal = threadInstances.get(beanName);
-        if (threadLocal != null) {
-            return (T) threadLocal.get();
-        }
-        return null;
+        return threadInstances.get(beanName) != null ? (T) threadInstances.get(beanName).get() : null;
     }
 
     public boolean containsBean(String beanName) {
@@ -98,29 +94,33 @@ public class ContextContainer {
         return s.toString();
     }
 
-    //  MONITORING
+    //  CLEANING
     private void cleanupBeans() {
         var beanDefinitions = this.getOrderedByDependenciesBeans();
         var singletonInstances = this.getSingletonInstances();
         Collections.reverse(beanDefinitions);
-        for (var currentBeanName : beanDefinitions) {
+
+        beanDefinitions.forEach((currentBeanName) -> {
             BeanObject bean = this.getBeans().get(currentBeanName);
             Object beanInstance = null;
             if (bean == null) {
-                throw new RuntimeException("Почему-то такого бина нет");
+                throw new RuntimeException("There is no such bean");
             }
-            if (bean.getScope().equals(ScopeType.SINGLETON)) {
-                beanInstance = singletonInstances.get(currentBeanName);
-            } else if (bean.getScope().equals(ScopeType.THREAD)) {
-                beanInstance = this.getThreadLocalBean(currentBeanName);
-            } else if (bean.getScope().equals(ScopeType.PROTOTYPE)) {
-                continue;
+
+            switch (bean.getScope()) {
+                case SINGLETON -> beanInstance = singletonInstances.get(currentBeanName);
+                case THREAD -> beanInstance = this.getThreadLocalBean(currentBeanName);
+                case PROTOTYPE -> beanInstance = null;
+                default -> {
+                    throw new RuntimeException("Unknown scope");
+                }
             }
+
             if (beanInstance != null) {
                 checkForPrototypeBeans(beanInstance);
                 invokePreDestroy(beanInstance, bean);
             }
-        }
+        });
     }
 
 

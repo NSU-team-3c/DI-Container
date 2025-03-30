@@ -58,9 +58,6 @@ public class Application {
             case SINGLETON -> getSingleton(name, bean);
             case PROTOTYPE -> (T) createBeanInstance(bean);
             case THREAD -> getThreadLocal(name, bean);
-            default -> {
-                throw new BadJsonException(bean.getName(), ".No such bean scope: " + bean.getScope());
-            }
         };
         if (bean.getScope().equals(ScopeType.PROTOTYPE)) {
             invokePostConstruct(result, bean);
