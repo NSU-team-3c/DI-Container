@@ -1,15 +1,22 @@
 package ru.nsu.utils;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 public class Utils {
-//    public static void isAnnotationValid(Field field) throws IncorrectFieldAnnotationsException {
-//
-//        // TODO change Wired to Inject
-//        if (field.isAnnotationPresent(Wired.class) && field.isAnnotationPresent(Bean.class)) {
-//            throw new IncorrectFieldAnnotationsException(field.getType().toString(), field.getName());
-//        }
-//    }
-//
-//    // TODO change Wired to Inject
+    public static boolean isAvailableForInjection(Class<?> clazz) {
+        if (clazz.isAnnotationPresent(Named.class)) {
+            return true;
+        }
+
+        return (Stream.of(clazz.getDeclaredFields(), clazz.getDeclaredConstructors(), clazz.getDeclaredMethods())
+                .flatMap(Arrays::stream)
+                .anyMatch(member -> member.isAnnotationPresent(Inject.class) || member.isAnnotationPresent(Named.class)));
+    }
+
+    // TODO change
 //    public static String getInjectableFieldName(Field field) {
 //        var name = field.getAnnotation(Wired.class).name();
 //        if (name.isEmpty() || name.isBlank()) {
@@ -18,7 +25,7 @@ public class Utils {
 //
 //        return name;
 //    }
-//
+
 //    public static String getDefaultName(Class<?> item) {
 //        var a = item.getTypeName();
 //        return a.substring(0, 1).toLowerCase() +

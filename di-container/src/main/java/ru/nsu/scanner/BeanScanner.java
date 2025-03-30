@@ -16,6 +16,7 @@ import ru.nsu.enums.ScopeType;
 import ru.nsu.exceptions.BadJsonException;
 import ru.nsu.exceptions.ClazzException;
 import ru.nsu.exceptions.ConstructorException;
+import ru.nsu.utils.Utils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -86,7 +87,7 @@ public class BeanScanner {
 
 
         for (Class<?> clazz : allClasses) {
-            if (!clazz.isInterface() && isAvailableForInjection(clazz)) {
+            if (!clazz.isInterface() && Utils.isAvailableForInjection(clazz)) {
                 BeanObject bean = new BeanObject();
                 String namedAnnotationValue = Optional.ofNullable(clazz.getAnnotation(Named.class))
                         .map(Named::value)
@@ -248,16 +249,6 @@ public class BeanScanner {
         }
 
         throw new ConstructorException(className, "Can't make suitable construct for json config.");
-    }
-
-    private boolean isAvailableForInjection(Class<?> clazz) {
-        if (clazz.isAnnotationPresent(Named.class)) {
-            return true;
-        }
-
-        return (Stream.of(clazz.getDeclaredFields(), clazz.getDeclaredConstructors(), clazz.getDeclaredMethods())
-                .flatMap(Arrays::stream)
-                .anyMatch(member -> member.isAnnotationPresent(Inject.class) || member.isAnnotationPresent(Named.class)));
     }
 
 
