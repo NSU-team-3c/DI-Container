@@ -17,25 +17,22 @@ import java.util.Map;
 public class DependenciesManager {
 
     private final Map<String, BeanObject> beans;
+    private final DefaultDirectedGraph<String, DefaultEdge> graph;
+    private final List<String> sortedBeans;
 
     public DependenciesManager(Map<String, BeanObject> beans) {
         this.beans = beans;
+        this.graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+        this.sortedBeans = new ArrayList<>();
     }
 
 
     public List<String> resolveDependencies() {
-        List<String> sortedBeans = new ArrayList<>();
-        DefaultDirectedGraph<String, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
-
         beans.keySet().forEach(graph::addVertex);
         beans.forEach((beanName, beanDefinition) -> addDependenciesToGraph(beanName, beanDefinition, graph));
-
         checkForCycleDependency(graph);
-
         TopologicalOrderIterator<String, DefaultEdge> orderIterator = new TopologicalOrderIterator<>(graph);
-
         orderIterator.forEachRemaining(sortedBeans::add);
-
         return sortedBeans;
     }
 

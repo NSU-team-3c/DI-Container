@@ -16,6 +16,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -26,7 +27,6 @@ public class Application {
     public Application(ContextContainer context) {
         this.context = context;
     }
-
 
     /**
      * Получение бина по имени.
@@ -39,28 +39,27 @@ public class Application {
     public <T> T getBean(String name) {
         BeanObject bean = null;
         var allBeans = context.getBeans();
+
+        String beanName = name;
         bean = allBeans.get(name);
         if (bean == null) {
-            for (var singleBean : allBeans.values()) {
-                if (singleBean.getClassName().equals(name) || singleBean.getName().equals(name)) {
-                    bean = singleBean;
-                    name = singleBean.getName();
-                    break;
-                }
+            var foundBean = allBeans.values().stream().filter((currBean) -> currBean.getClassName().equals(name)
+                    || currBean.getName().equals(name)).findFirst();
+            if (foundBean.isPresent()) {
+                bean = foundBean.get();
+                beanName = bean.getName();
+            } else {
+                bean = allBeans.get(context.getInterfaceBindings().get(name));
+                beanName = bean.getName();
             }
         }
 
-        /*
-         */
-        if (bean == null) {
-            bean = allBeans.get(context.getInterfaceBindings().get(name));
-            name = bean.getName();
-        }
         T result = switch (bean.getScope()) {
-            case SINGLETON -> getSingleton(name, bean);
+            case SINGLETON -> getSingleton(beanName, bean);
             case PROTOTYPE -> (T) createBeanInstance(bean);
-            case THREAD -> getThreadLocal(name, bean);
+            case THREAD -> getThreadLocal(beanName, bean);
         };
+
         if (bean.getScope().equals(ScopeType.PROTOTYPE)) {
             invokePostConstruct(result, bean);
         }
@@ -97,7 +96,7 @@ public class Application {
         }
     }
 
-    public void instantiateAndRegisterBeans() {
+    public void initAndRegisterBeans() {
         var beans = context.getBeans();
         var orderedBeanNames = context.getOrderedByDependenciesBeans();
 
@@ -105,11 +104,11 @@ public class Application {
 
         orderedBeanNames.forEach(beanName -> {
             var bean = beans.get(beanName);
-            instantiateAndRegisterBean(bean);
+            initAndRegisterBean(bean);
         });
     }
 
-    private void instantiateAndRegisterBean(BeanObject bean) {
+    private void initAndRegisterBean(BeanObject bean) {
         var beanName = (bean.getName() != null) ? bean.getName() : bean.getClassName();
         var beanScope = bean.getScope();
         if (beanScope.equals(ScopeType.PROTOTYPE)) {
@@ -180,8 +179,8 @@ public class Application {
     private Object injectField(Field field) {
         field.setAccessible(true);
         Named namedAnnotation = field.getAnnotation(Named.class);
-        String actualName = (namedAnnotation != null ? namedAnnotation.value() : field.getType().getName());
-        Object fieldInstance = getBean(actualName);
+        var actualName = (namedAnnotation != null ? namedAnnotation.value() : field.getType().getName());
+        var fieldInstance = getBean(actualName);
         BeanObject newFieldBean;
         if (fieldInstance == null) {
             newFieldBean = context.getBeans().get(actualName);
@@ -192,7 +191,7 @@ public class Application {
 
 
     private Object createAndRegisterBeanDependency(BeanObject bean) {
-        Object beanInstance = createBeanInstance(bean);
+        var beanInstance = createBeanInstance(bean);
         invokePostConstruct(beanInstance, bean);
         registerBean(bean.getScope(), bean, beanInstance);
         if (beanInstance == null) {
@@ -212,7 +211,6 @@ public class Application {
                 Provider<?> provider = () -> getBean(actualType.getName());
                 params[i] = provider;
             } else {
-                // Пытаемся получить имя из аннотации @Named для параметра, если оно есть
                 Annotation[] annotations = constructor.getParameterAnnotations()[i];
                 String namedValue = null;
                 for (Annotation annotation : annotations) {
@@ -224,13 +222,10 @@ public class Application {
                 Object paramsResult;
                 String actualName;
 
-                // Определяем actualName в зависимости от того, задано ли namedValue.
                 actualName = (namedValue != null) ? namedValue : paramTypes[i].getName();
 
-                // Пытаемся получить bean с использованием actualName.
                 paramsResult = getBean(actualName);
 
-                // Если bean не найден, создаем его инстанс.
                 if (paramsResult == null) {
                     BeanObject beanDefinition = context.getBeans().get(actualName);
                     paramsResult = createAndRegisterBeanDependency(beanDefinition);
@@ -247,26 +242,26 @@ public class Application {
         if (initParams == null || initParams.isEmpty()) {
             return;
         }
-        for (Map.Entry<String, Object> entry : initParams.entrySet()) {
+        initParams.forEach((key, value) -> {
             try {
-                String methodName = Utils.createSetMethodName(entry.getKey());
-                Object value = entry.getValue();
+                String methodName = Utils.createSetMethodName(key);
                 Method setterMethod = findMethodByNameAndParameterType(instance.getClass(), methodName, value);
                 setterMethod.invoke(instance, value);
             } catch (Exception e) {
-                throw new SomethingBadException(entry.getKey() + instance.getClass().getName());
+                throw new SomethingBadException(key + instance.getClass().getName());
             }
-        }
+        });
     }
 
     private Method findMethodByNameAndParameterType(Class<?> clazz, String methodName, Object value) throws NoSuchMethodException {
-        for (Method method : clazz.getMethods()) {
-            if (method.getName().equals(methodName) &&
-                    method.getParameterTypes().length == 1 &&
-                    method.getParameterTypes()[0].isAssignableFrom(value.getClass())) {
-                return method;
-            }
+        var foundMethod = Arrays.stream(clazz.getMethods()).filter((method) -> (method.getName().equals(methodName) &&
+                method.getParameterTypes().length == 1 &&
+                method.getParameterTypes()[0].isAssignableFrom(value.getClass()))).findFirst();
+
+        if (foundMethod.isPresent()) {
+            return foundMethod.get();
+        } else {
+            throw new NoSuchMethodException(clazz.getName() + ":" + methodName);
         }
-        throw new NoSuchMethodException(clazz.getName() + "." + methodName + "(...)");
     }
 }

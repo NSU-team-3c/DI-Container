@@ -13,7 +13,7 @@ public class TestUtils {
 
         ContextContainer context = new ContextContainer(scanner);
         Application app = new Application(context);
-        app.instantiateAndRegisterBeans();
+        app.initAndRegisterBeans();
 
         return app;
     }

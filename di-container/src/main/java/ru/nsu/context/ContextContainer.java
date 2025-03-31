@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 public class ContextContainer {
     private Map<String, BeanObject> beans;
     private Map<String, Object> singletonInstances = new HashMap<>();
-    private List<String> orderedByDependenciesBeans = new ArrayList<>();
+    private List<String> orderedByDependenciesBeans;
     private Map<String, ThreadLocal<Object>> threadInstances = new HashMap<>();
     private Map<String, Object> customBean = new HashMap<>();
     private BeanScanner beanScanner;
@@ -64,40 +64,24 @@ public class ContextContainer {
         threadInstances.put((bean.getName() != null ? bean.getName() : bean.getClassName()), ThreadLocal.withInitial(beanSupplier));
     }
 
-    public String getContainerState(String beanClassName) {
-        StringBuilder s = new StringBuilder();
-        s.append("Context:{\n");
-
-        s.append("singleton instances: \n");
-        for (String key : singletonInstances.keySet()) {
-            Object bean = singletonInstances.get(key);
-            s.append(key + " : " + singletonInstances.get(key).hashCode() + "=[");
-            Field[] beanFields = bean.getClass().getDeclaredFields();
-            for (Field beanField : beanFields) {
-                try {
-                    beanField.setAccessible(true);
-                    Object beanFieldValue = beanField.get(bean);
-                    if (beanFieldValue != null) {
-                        s.append(beanField.getName() + " : " + beanFieldValue.hashCode());
-                    } else {
-                        s.append(beanField.getName() + " : null");
-                    }
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
+    private Object getBeanByScopeAndName(ScopeType scope, String beanName) {
+        var singletonInstances = this.getSingletonInstances();
+        Object beanInstance = null;
+        switch (scope) {
+            case SINGLETON -> beanInstance = singletonInstances.get(beanName);
+            case THREAD -> beanInstance = this.getThreadLocalBean(beanName);
+            case PROTOTYPE -> {}
+            default -> {
+                throw new RuntimeException("unknown scope");
             }
-            s.append("]\n");
         }
 
-
-        s.append("}");
-        return s.toString();
+        return beanInstance;
     }
 
     //  CLEANING
     private void cleanupBeans() {
         var beanDefinitions = this.getOrderedByDependenciesBeans();
-        var singletonInstances = this.getSingletonInstances();
         Collections.reverse(beanDefinitions);
 
         beanDefinitions.forEach((currentBeanName) -> {
@@ -106,16 +90,7 @@ public class ContextContainer {
             if (bean == null) {
                 throw new RuntimeException("bean not found");
             }
-
-            switch (bean.getScope()) {
-                case SINGLETON -> beanInstance = singletonInstances.get(currentBeanName);
-                case THREAD -> beanInstance = this.getThreadLocalBean(currentBeanName);
-                case PROTOTYPE -> beanInstance = null;
-                default -> {
-                    throw new RuntimeException("unknown scope");
-                }
-            }
-
+            beanInstance = getBeanByScopeAndName(bean.getScope(), currentBeanName);
             if (beanInstance != null) {
                 checkForPrototypeBeans(beanInstance);
                 invokePreDestroy(beanInstance, bean);
@@ -129,20 +104,18 @@ public class ContextContainer {
         for (Field field : beanInstance.getClass().getDeclaredFields()) {
             try {
                 field.setAccessible(true);
-
-                var prototypeDep = field.get(beanInstance);
-
-                if (prototypeDep instanceof Provider) {
-                    prototypeDep = ((Provider<?>) prototypeDep).get();
+                var prototypeDependency = field.get(beanInstance);
+                if (prototypeDependency instanceof Provider) {
+                    prototypeDependency = ((Provider<?>) prototypeDependency).get();
                 }
-                if (prototypeDep != null) {
-                    BeanObject prototypeBean = this.findPrototypeBean(prototypeDep.getClass().getName());
+                if (prototypeDependency != null) {
+                    BeanObject prototypeBean = this.findPrototypeBean(prototypeDependency.getClass().getName());
                     if (prototypeBean != null && prototypeBean.getPreDestroyMethod() != null) {
-                        invokePreDestroy(prototypeDep, prototypeBean);
+                        invokePreDestroy(prototypeDependency, prototypeBean);
                     }
                 }
             } catch (IllegalAccessException e) {
-                throw new SomethingBadException(field.getName() + " predestroy failed");
+                throw new SomethingBadException(field.getName() + " pre destroy failed");
             }
         }
     }
@@ -154,8 +127,38 @@ public class ContextContainer {
                 preDestroyMethod.setAccessible(true);
                 preDestroyMethod.invoke(beanInstance);
             } catch (Exception e) {
-                throw new SomethingBadException(bean.getName() + "can't invoke predestroy method");
+                throw new SomethingBadException(bean.getName() + "can't invoke pre destroy method");
             }
         }
+    }
+
+    public String getContainerState(String beanClassName) {
+        StringBuilder s = new StringBuilder();
+        s.append("Context:{\n");
+
+        s.append("singleton instances: \n");
+        for (String key : singletonInstances.keySet()) {
+            Object bean = singletonInstances.get(key);
+            s.append(key).append(" : ").append(singletonInstances.get(key).hashCode()).append("=[");
+            Field[] beanFields = bean.getClass().getDeclaredFields();
+            for (Field beanField : beanFields) {
+                try {
+                    beanField.setAccessible(true);
+                    Object beanFieldValue = beanField.get(bean);
+                    if (beanFieldValue != null) {
+                        s.append(beanField.getName()).append(" : ").append(beanFieldValue.hashCode());
+                    } else {
+                        s.append(beanField.getName()).append(" : null");
+                    }
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+            s.append("]\n");
+        }
+
+
+        s.append("}");
+        return s.toString();
     }
 }
