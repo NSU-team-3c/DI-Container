@@ -46,7 +46,7 @@ public class BeanScanner {
      *
      * @param allClasses
      */
-    private void autobind(Set<Class<?>> allClasses) {
+    private void autoBind(Set<Class<?>> allClasses) {
         var set = nameToBeansMap.entrySet();
 
         for (Class<?> clazz : allClasses) {
@@ -109,7 +109,7 @@ public class BeanScanner {
                     try {
                         selectedConstructor = clazz.getDeclaredConstructor();
                     } catch (NoSuchMethodException e) {
-                        throw new ConstructorException(clazz.getCanonicalName(), "No constructor at all");
+                        throw new ConstructorException(clazz.getCanonicalName(), "no constructor");
                     }
                 }
 
@@ -129,8 +129,7 @@ public class BeanScanner {
             }
         }
 
-        autobind(allClasses);
-
+        autoBind(allClasses);
     }
 
 
@@ -143,7 +142,7 @@ public class BeanScanner {
                 if (postConstructMethod == null) {
                     postConstructMethod = method;
                 } else {
-                    throw new IllegalStateException("@PostConstruct annotation found on multiple methods in " + clazz.getName());
+                    throw new IllegalStateException("too many PostConstructor annotations" + clazz.getName());
                 }
             }
 
@@ -151,7 +150,7 @@ public class BeanScanner {
                 if (preDestroyMethod == null) {
                     preDestroyMethod = method;
                 } else {
-                    throw new IllegalStateException("@PreDestroy annotation found on multiple methods in " + clazz.getName());
+                    throw new IllegalStateException("too many PreDestroy annotations" + clazz.getName());
                 }
             }
         }
@@ -174,7 +173,7 @@ public class BeanScanner {
 
 
     private List<BeanDTO> readBeans(String jsonConfigPath) throws IOException {
-        InputStream jsonInput = this.getClass().getClassLoader().getResourceAsStream(jsonConfigPath);
+        var jsonInput = this.getClass().getClassLoader().getResourceAsStream(jsonConfigPath);
         return objectMapper.readValue(jsonInput, new TypeReference<List<BeanDTO>>(){});
     }
 
@@ -203,8 +202,6 @@ public class BeanScanner {
 
     private static BeanDTO getBeanDTO(Class<?> configClass, Bean beanAnnotation, String beanName) {
         ScopeType scope = beanAnnotation.scope();
-
-        // Создаем объект BeanDTO
         BeanDTO beanDTO = new BeanDTO();
         beanDTO.setClassName(configClass.getCanonicalName());
         beanDTO.setName(beanName);
@@ -250,7 +247,6 @@ public class BeanScanner {
                 return currentBean;
             }
         }
-
         return null;
     }
 }
