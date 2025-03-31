@@ -27,6 +27,7 @@ public class Application {
         this.context = context;
     }
 
+
     /**
      * Получение бина по имени.
      * Если найти не получается пытается достать объект из мапы биндинга интерфейсов на бины
@@ -89,6 +90,13 @@ public class Application {
         return (T) result;
     }
 
+    private void  registerBean(ScopeType beanScope, BeanObject bean, Object beanInstance) {
+        switch (beanScope) {
+            case THREAD -> context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
+            case SINGLETON -> context.registerSingletonBeanInstance(bean, beanInstance);
+        }
+    }
+
     public void instantiateAndRegisterBeans() {
         var beans = context.getBeans();
         var orderedBeanNames = context.getOrderedByDependenciesBeans();
@@ -111,10 +119,7 @@ public class Application {
             var beanInstance = createBeanInstance(bean);
             invokePostConstruct(beanInstance, bean);
 
-            switch (beanScope) {
-                case THREAD -> context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
-                case SINGLETON -> context.registerSingletonBeanInstance(bean, beanInstance);
-            }
+            registerBean(beanScope, bean, beanInstance);
         }
     }
 
@@ -189,11 +194,7 @@ public class Application {
     private Object createAndRegisterBeanDependency(BeanObject bean) {
         Object beanInstance = createBeanInstance(bean);
         invokePostConstruct(beanInstance, bean);
-        switch (bean.getScope()) {
-            case THREAD -> context.registerThreadBeanInstance(bean, () -> createBeanInstance(bean));
-            case SINGLETON -> context.registerSingletonBeanInstance(bean, beanInstance);
-            case PROTOTYPE -> {}
-        }
+        registerBean(bean.getScope(), bean, beanInstance);
         if (beanInstance == null) {
             throw new SomethingBadException(bean.getName() + " dependency error");
         }
