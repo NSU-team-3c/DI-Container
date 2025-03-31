@@ -34,12 +34,6 @@ public class BeanScanner {
 
     private Map<String, BeanObject> nameToBeansMap = new HashMap<>();
 
-    private Map<String, BeanObject> singletonScopes = new HashMap<>();
-
-    private Map<String, BeanObject> threadScopes = new HashMap<>();
-
-    private Map<String, BeanObject> unknownScopes = new HashMap<>();
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private List<BeanDTO> beansFromJson = new ArrayList<>();
@@ -132,14 +126,6 @@ public class BeanScanner {
                 findConstructMethods(clazz, bean);
 
                 this.nameToBeansMap.put(namedAnnotationValue, bean);
-                switch (beanDTO.getScope()) {
-                    case PROTOTYPE -> {
-                    }
-                    case SINGLETON -> singletonScopes.put(namedAnnotationValue, bean);
-                    case THREAD -> threadScopes.put(namedAnnotationValue, bean);
-                    default ->
-                            throw new BadJsonException(namedAnnotationValue, "Unknown bean scope " + bean.getScope());
-                }
             }
         }
 
